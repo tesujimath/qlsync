@@ -1,0 +1,44 @@
+qlsync is a small GUI program for maintaining playlists and music
+files on a portable device.  It uses Quodlibet to find playlists and
+music files, but is otherwise independent.
+
+Different transport protocols are supported to connect to your device.
+So far only filesystem (i.e. mounted mass storage devive) and FTP are
+provided.  MTP is not currently supported.
+
+The program enables you to specify the parameters (transport
+protocol, music location, etc) for various devices.
+
+The scan operation will scan both the Quodlibet library (for changed
+playlists, etc), and your device.  A list of all playlists known to
+Quodlibet is displayed, with those currently on the device ticked.
+
+Simply tick/untick those playlists you do/don't want on your device,
+and then hit sync.
+
+For now, there is no graphical progress indicator.  You have to watch
+the standard output to see what is going on.  A proper progress bar is
+next on the TODO list.
+
+qlsync will ignore any music files or playlists on your device which
+aren't in the Quodlibet library.  It will delete files from your
+device only in the following cases:
+
+   1. You untick a playlist that was previously sync'd to the device.
+      In this case the playlist and music it references will be
+      deleted.  However, music files still referenced by another known
+      playlist will be left on the device.
+
+   2. You remove some music files from a playlist which is sync'd to
+      the device.  In this case, the music files are deleted from the
+      device, and the updated playlist file copied onto the device.
+
+Currently only M3U format playlists are supported.
+
+Playlists are put in the subdirectory "Playlists" of the music folder
+on the device.
+
+Comments and requests for improvement welcome.
+
+Simon Guest <simon.guest@tesujimath.org>
+8 Oct 2012
