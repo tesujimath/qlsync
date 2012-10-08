@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+#
+# Copyright 2012 Simon Guest
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation
+#
+# This script is for owners of those rather closed devices which many
+# people seem to like (guess which), and for which import/export of
+# playlists is not easy.  Other people shouldn't need it.
+#
+# What this script does:
+# 1. Delete all playlists from where qlsync puts them on the device
+# 2. Look in the mastermusicdir (which you may specify), and make all
+#    files found there into a single playlist called All Songs.
+#
+# Once you've done this, you'll find qlsync will know what songs are
+# actually on your device.
+
+import argparse
+import gtk
+import os
+import shutil
+import sys
+import tempfile
+
+import qlsync.engine
+
+def main():
+    # parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("devicename", help="device name as defined in qlsync settings")
+    parser.add_argument("--mastermusicdir", default="/var/mobile/Media/MewSeek/Import",
+                        help="device directory where songs live")
+    args = parser.parse_args()
+
+    # find devicename in settings
+    settings = qlsync.engine.Settings()
+    device = None
+    for d in settings.devices:
+        if d.name == args.devicename:
+            device = d
+            break
+    if device == None:
+        sys.stderr.write("No such device " + args.devicename + " defined in qlsync\n")
+        sys.exit(1)
+
+    # open the connection to the device
+    device.shifter.open()
+
+    # remove all existing playlists
+    for devicefile in device.shifter.ls(device.playlist_dir()):
+        device.shifter.removefile(os.path.join(device.playlist_dir(), devicefile))
+    
+    # write All Songs playlist to temporary file
+    tmpdir = tempfile.mkdtemp()         # temporary directory
+    playlist_file = os.path.join(tmpdir, device.name + "-all-songs.m3u")
+    device.shifter.open()
+    if not device.shifter.path_exists(args.mastermusicdir):
+        sys.stderr.write("No such directory " + args.mastermusicdir + " on device\n")
+        device.shifter.close()
+        sys.exit(1)
+    f = open(playlist_file, "w")
+    for devicefile in device.shifter.ls(args.mastermusicdir):
+        f.write(device.musicfile_playlist_path(devicefile) + "\n")
+    f.close()
+    
+    # upload All Songs playlist to the device
+    device.shifter.uploadfile(playlist_file, os.path.join(device.playlist_dir(), "All Songs.m3u"))
+
+    # clean up
+    device.shifter.close()
+    shutil.rmtree(tmpdir)
+
+if __name__ == "__main__":
+    main()

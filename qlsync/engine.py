@@ -4,7 +4,6 @@
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation
 
-import argparse
 import pickle
 import os
 import os.path
@@ -27,7 +26,12 @@ class Device(object):
         self.musicdir = musicdir
         self.shifter = shifter
         self.flatten = flatten
+        self.clear_non_persistent()
+
+    def clear_non_persistent(self):
+        """Clear non-persistent settings."""
         self.playlist_files = {}         # indexed by playlist_name, of set of music files
+        self.all_songs = set()
 
     def __str__(self):
         return "Device(name=" + self.name + ",musicdir=" + self.musicdir + ",flatten=" + str(self.flatten) + \
@@ -58,8 +62,8 @@ class Device(object):
                     playlist_file = m.group(0)
                     playlist_name = m.group(1)
                     playlist_contents = self.shifter.readlines(os.path.join(self.playlist_dir(), playlist_file))
-                    #print "playlist", playlist_name, len(playlist_contents), "songs"
                     self.playlist_files[playlist_name] = set(playlist_contents)
+                    self.all_songs.update(self.playlist_files[playlist_name])
         self.shifter.close()
 
     def playlist_name(self, playlistfile):
@@ -68,6 +72,7 @@ class Device(object):
             return m.group(1)
         else:
             return None
+
 
 class Settings(object):
     def __init__(self, configFile = os.path.expanduser("~/.qlsync")):
@@ -86,11 +91,12 @@ class Settings(object):
                 self.devices = settings
                 self.currentDeviceIndex = currentDeviceIndex
                 f.close()
-                #print "loaded devices", [d.name for d in self.devices]
             except IOError as e:
                 print "load settings failed: " + str(e)
+        self.clear_non_persistent()
 
     def save(self):
+        self.clear_non_persistent()
         try:
             f = open(self.configFile, 'w')
             os.fchmod(f.fileno(), 0600)               # might have an FTP password here
@@ -99,6 +105,11 @@ class Settings(object):
             f.close()
         except IOError as e:
             print "save settings failed: " + str(e)
+
+    def clear_non_persistent(self):
+        """Clear non-persistent settings."""
+        for d in self.devices:
+            d.clear_non_persistent()
 
     def store_device(self, device, deviceIndex):
         device_list_changed = False
@@ -251,7 +262,6 @@ Files are not copied if they are already in the device playlist.
                 # unwanted playlist on device, so delete
                 self.delete_playlist(self.playlist_names[i], device)
         #label_callback(str(len(self.copies)) + " files to copy and " + str(len(self.deletions)) + " to delete")
-        print str(len(self.copies)) + " files to copy and " + str(len(self.deletions)) + " to delete"
         self.commit_queue(device)
         # update local state to reflect what we did.  This is non optimal, but works:
         self.scan_device(device)
@@ -287,7 +297,7 @@ Files are not copied if they are already in the device playlist.
                 devicepath = relpath
             devicepath_in_playlist = device.musicfile_playlist_path(devicepath)
             playlist_files.append(devicepath_in_playlist)
-            if new_playlist or devicepath_in_playlist not in device.playlist_files[playlist_name]:
+            if devicepath_in_playlist not in device.all_songs:
                 self.queue_copy(abspath, devicepath)
 
         # determine whether we need to copy playlist itself, and queue deletions for obsolete files
@@ -320,6 +330,8 @@ Files are not copied if they are already in the device playlist.
 
     def commit_queue(self, device):
         """Copy all wanted files, and delete unwanted."""
+        n_copies = len(self.copies)
+        n_deletions = len(self.deletions)
         device.shifter.open()
         dstRoot = device.musicdir
         i = 1
@@ -327,7 +339,7 @@ Files are not copied if they are already in the device playlist.
             dstFile = os.path.join(dstRoot, dst)
             dstDir = os.path.dirname(dstFile)
             device.shifter.makedirs(dstDir)
-            print "uploadfile", i, dstFile
+            print "uploadfile", i, "of", n_copies, ": ", dstFile
             i += 1
             device.shifter.uploadfile(src, dstFile)
             self.deletions[dst] = False
@@ -338,7 +350,7 @@ Files are not copied if they are already in the device playlist.
                 dstFile = os.path.join(dstRoot, dst)
                 dstDir = os.path.dirname(dstFile)
                 delDirs[dstDir] = True
-                print "removefile", i, dstFile
+                print "removefile", i, "of", n_deletions, ": ", dstFile
                 i += 1
                 device.shifter.removefile(dstFile)
         for dstDir in delDirs.keys():
