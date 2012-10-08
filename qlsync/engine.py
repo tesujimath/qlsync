@@ -17,7 +17,7 @@ from quodlibet import config
 from quodlibet import const
 
 from qlsync import *
-
+from qlsync.shifters import ShifterError
 
 class Device(object):
     """Access to files on the device."""
@@ -53,7 +53,7 @@ class Device(object):
 
     def scan_playlists(self):
         """Get all the playlists from the device, by looking in the playlist dir for m3u files."""
-        self.playlist_files = {}
+        self.clear_non_persistent()
         self.shifter.open()
         if self.shifter.path_exists(self.playlist_dir()):
             for f in self.shifter.ls(self.playlist_dir()):
@@ -352,7 +352,11 @@ Files are not copied if they are already in the device playlist.
                 delDirs[dstDir] = True
                 print "removefile", i, "of", n_deletions, ": ", dstFile
                 i += 1
-                device.shifter.removefile(dstFile)
+                try:
+                    device.shifter.removefile(dstFile)
+                except ShifterError:
+                    # we don't care if this fails
+                    pass
         for dstDir in delDirs.keys():
             device.shifter.removedir_if_empty(dstDir)
         device.shifter.close()
