@@ -10,8 +10,8 @@ import gtk
 from qlsync.shifters import *
 
 class FilesystemShifterWidget(gtk.VBox):
-    def __init__(self):
-        pass
+    def __init__(self, *args):
+        super(FilesystemShifterWidget, self).__init__(args)
 
     def display(self, shifter):
         pass

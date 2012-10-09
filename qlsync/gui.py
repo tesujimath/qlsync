@@ -69,11 +69,15 @@ class SettingsDialog(object):
         self.buttonBox.pack_start(okButton)
         okButton.show()
         okButton.set_flags(gtk.CAN_DEFAULT)
-        okButton.grab_default()
         self.layout.pack_start(self.buttonBox)
         self.buttonBox.show()
 
         self.window.action_area.pack_start(self.layout)
+
+        # grab_default after pack_start, to avoid:
+        # GtkWarning: gtkwidget.c:5683: widget not within a GtkWindow
+        okButton.grab_default()
+
         self.layout.show()
 
     def destroy(self, widget=None):
@@ -159,15 +163,17 @@ class MainWindow(object):
 
         # Scan button
         self.scanButton = gtk.Button("Scan")
+        self.scanButton.set_flags(gtk.CAN_DEFAULT)
         self.scanButton.connect_object("clicked", self.scan_callback, self.window)
         self.window.action_area.pack_start(self.scanButton)
+        # grab_default after pack_start, to avoid:
+        # GtkWarning: gtkwidget.c:5683: widget not within a GtkWindow
+        self.scanButton.grab_default()
         self.scanButton.show()
 
         # Sync button
         self.syncButton = gtk.Button("Sync")
         self.syncButton.connect_object("clicked", self.sync_callback, self.window)
-        self.syncButton.set_flags(gtk.CAN_DEFAULT) # this makes it so the button is the default.
-        self.syncButton.grab_default()
         self.window.action_area.pack_start(self.syncButton)
         self.syncButton.show()
 
