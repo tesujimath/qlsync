@@ -16,10 +16,6 @@ Quodlibet is displayed, with those currently on the device ticked.
 Simply tick/untick those playlists you do/don't want on your device,
 and then hit sync.
 
-For now, there is no graphical progress indicator.  You have to watch
-the standard output to see what is going on.  A proper progress bar is
-next on the TODO list.
-
 qlsync will ignore any music files or playlists on your device which
 aren't in the Quodlibet library.  It will delete files from your
 device only in the following cases:
@@ -38,7 +34,16 @@ Currently only M3U format playlists are supported.
 Playlists are put in the subdirectory "Playlists" of the music folder
 on the device.
 
+Playlists are copied or deleted after all the music files.  This is
+because if the operation is cancelled, qlsync forgets about files it
+had already copied or deleted.  So if you restart the operation, it
+will start over, but end up with everything copied or deleted.
+
+So why does qlsync just look at playlists, rather than the actual
+files on the device?  It's to support the two-stage process for
+loading music onto iPods.  See README.iPod.
+
 Comments and requests for improvement welcome.
 
 Simon Guest <simon.guest@tesujimath.org>
-8 Oct 2012
+9 Oct 2012

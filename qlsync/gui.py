@@ -4,6 +4,7 @@
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation
 
+import gobject
 import pygtk
 import gtk
 
@@ -265,43 +266,62 @@ class MainWindow(object):
         if self.settings.currentDeviceIndex != None:
             device = self.settings.devices[self.settings.currentDeviceIndex]
 
-            # # progress window is TBD
-            # progress_window = gtk.Dialog("qlsync")
-            # progress_vbox = gtk.VBox()
+            # progress window is TBD
+            self.progress_window = gtk.Dialog("qlsync progress", None, gtk.DIALOG_MODAL)
+            progress_vbox = gtk.VBox()
 
-            # # label
-            # self.progress_label = gtk.Label("")
-            # progress_vbox.pack_start(self.progress_label)
-            # self.progress_label.show()
+            # label
+            self.progress_label = gtk.Label("")
+            progress_vbox.pack_start(self.progress_label)
+            self.progress_label.show()
 
-            # # progress bar
-            # self.progress_bar = gtk.ProgressBar()
-            # progress_vbox.pack_start(self.progress_bar)
-            # self.progress_bar.show()
+            # progress bar
+            self.progress_bar = gtk.ProgressBar()
+            progress_vbox.pack_start(self.progress_bar)
+            self.progress_bar.show()
 
-            # # cancel button
-            # cancelButton = gtk.Button("Cancel")
-            # cancelButton.connect_object("clicked", self.cancel_sync_callback, self.window)
-            # progress_vbox.pack_start(cancelButton)
-            # cancelButton.show()
+            # cancel button
+            cancelButton = gtk.Button("Cancel")
+            cancelButton.connect_object("clicked", self.cancel_sync_callback, self.window)
+            progress_vbox.pack_start(cancelButton)
+            cancelButton.show()
 
-            # progress_window.action_area.pack_start(progress_vbox)
-            # progress_vbox.show()
-            # progress_window.show()
+            self.progress_window.action_area.pack_start(progress_vbox)
+            progress_vbox.show()
+            self.progress_window.show()
 
             try:
-                self.syncer.sync_device(device, self.playlists_wanted, self.update_progress_label, self.update_progress)
+                self.syncer.sync_device(device,
+                                        self.playlists_wanted,
+                                        self.update_progress_label_callback,
+                                        self.update_progress_callback)
             except ShifterError as e:
                 self.show_error_message(str(e))
 
     def cancel_sync_callback(self, widget):
-        print "cancel not yet implemented"
+        self.syncer.cancel_sync()
+
+    def update_progress_label_callback(self, text):
+        gobject.idle_add(self.update_progress_label, text)
 
     def update_progress_label(self, text):
         self.progress_label.set_text(text)
 
-    def update_progress(self, fraction):
+    def update_progress_callback(self, fraction, done=False):
+        gobject.idle_add(self.update_progress, fraction, done)
+
+    def update_progress(self, fraction, done=False):
         self.progress_bar.set_fraction(fraction)
+        if done:
+            device = self.settings.devices[self.settings.currentDeviceIndex]
+            self.syncer.sync_device_completed(fraction, device)
+            self.close_progress_window()
+
+    def close_progress_window(self):
+            self.progress_window.destroy()
+            self.progress_window = None
+            self.progress_bar = None
+            self.progress_label = None
 
     def create_device_menu(self):
         self.deviceMenu = gtk.Menu()
