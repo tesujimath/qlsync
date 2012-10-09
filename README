@@ -7,7 +7,11 @@ So far only filesystem (i.e. mounted mass storage devive) and FTP are
 provided.  MTP is not currently supported.
 
 The program enables you to specify the parameters (transport
-protocol, music location, etc) for various devices.
+protocol, music location, etc) for various devices.  These are saved
+in the file ~/.qlsync.  Note that any password you specify for ftp
+connection will be stored in that file (in pickle format, so easily
+readable).  For this reason, permissions on that file are set to 600.
+A future version of this program may encrypt that file.  ;-)
 
 The scan operation will scan both the Quodlibet library (for changed
 playlists, etc), and your device.  A list of all playlists known to
@@ -17,7 +21,7 @@ Simply tick/untick those playlists you do/don't want on your device,
 and then hit sync.
 
 qlsync will ignore any music files or playlists on your device which
-aren't in the Quodlibet library.  It will delete files from your
+aren't in the Quodlibet library.  It should delete files from your
 device only in the following cases:
 
    1. You untick a playlist that was previously sync'd to the device.
@@ -29,11 +33,11 @@ device only in the following cases:
       the device.  In this case, the music files are deleted from the
       device, and the updated playlist file copied onto the device.
 
-Currently only M3U format playlists are supported.
+However, I strongly suggest you have backups for all music on your
+device.  There are no guarantees in case something goes wrong.
 
 Playlists are put in the subdirectory "Playlists" of the music folder
-on the device.
-
+on the device.  Currently only M3U format playlists are supported.
 Playlists are copied or deleted after all the music files.  This is
 because if the operation is cancelled, qlsync forgets about files it
 had already copied or deleted.  So if you restart the operation, it

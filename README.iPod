@@ -2,7 +2,9 @@ Getting music onto recent iPods without using iTunes can be tricky.
 Here's how my son does it, which explains I made qlsync behave in
 the way it does.
 
-1. Jailbreak your iPod, and install MewSeek from Cydia.
+1. Jailbreak your iPod, and install MewSeek from Cydia, and vsftpd.
+   To get vsftp to work, you need to install openssh, ssh into the
+   device, and mkdir /usr/share/empty.
 
 2. Now you can drop files into /var/mobile/Media/Downloads using
    qlsync.
