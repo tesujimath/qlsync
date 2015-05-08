@@ -1,0 +1,1 @@
+Enables to manage your playlists and music files on a device from your master library and playlists in Quodlibet.

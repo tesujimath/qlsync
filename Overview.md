@@ -1,0 +1,72 @@
+# Introduction #
+
+qlsync is a small GUI program for maintaining playlists and music
+files on a portable device.  It uses Quodlibet to find playlists and
+music files, but is otherwise independent.
+
+Different transport protocols are supported to connect to your device.
+So far only filesystem (i.e. mounted mass storage devive) and FTP are
+provided.  MTP is not currently supported.
+
+The program enables you to specify the parameters (transport
+protocol, music location, etc) for various devices.  These are saved
+in the file ~/.qlsync.  Note that any password you specify for ftp
+connection will be stored in that file (in pickle format, so easily
+readable).  For this reason, permissions on that file are set to 600.
+A future version of this program may encrypt that file.  ;-)
+
+The scan operation will scan both the Quodlibet library (for changed
+playlists, etc), and your device.  A list of all playlists known to
+Quodlibet is displayed, with those currently on the device ticked.
+
+Simply tick/untick those playlists you do/don't want on your device,
+and then hit sync.
+
+qlsync will ignore any music files or playlists on your device which
+aren't in the Quodlibet library.  It should delete files from your
+device only in the following cases:
+
+  1. You untick a playlist that was previously sync'd to the device.
+> > In this case the playlist and music it references will be
+> > deleted.  However, music files still referenced by another known
+> > playlist will be left on the device.
+
+
+> 2. You remove some music files from a playlist which is sync'd to
+> > the device.  In this case, the music files are deleted from the
+> > device, and the updated playlist file copied onto the device.
+
+However, I strongly suggest you have backups for all music on your
+device.  There are no guarantees in case something goes wrong.
+
+Playlists are put in the subdirectory "Playlists" of the music folder
+on the device.  Currently only M3U format playlists are supported.
+Playlists are copied or deleted after all the music files.  This is
+because if the operation is cancelled, qlsync forgets about files it
+had already copied or deleted.  So if you restart the operation, it
+will start over, but end up with everything copied or deleted.
+
+So why does qlsync just look at playlists, rather than the actual
+files on the device?  It's to support the two-stage process for
+loading music onto iPods.  See [IPodHowTo](IPodHowTo.md).
+
+# Installation #
+
+qlsync uses PyGtk and Quodlibet Python modules, but Quodlibet itself depends on PyGtk, so if you have a working Quodlibet installation, you should be fine.
+
+The source distribution is Python distutils, so simply unpack the tarfile, and install as root:
+```
+$ tar xvzf qlsync-X.Y.tar.gz
+$ cd qlsync-X.Y
+$ sudo python setup.py install
+```
+
+The default installation directory for Python distutils is probably /usr/local.
+
+# Screenshots #
+## Main Screen ##
+![http://qlsync.googlecode.com/files/qlsync-screenshot.png](http://qlsync.googlecode.com/files/qlsync-screenshot.png)
+## Settings ##
+![http://qlsync.googlecode.com/files/qlsync-settings-screenshot.png](http://qlsync.googlecode.com/files/qlsync-settings-screenshot.png)
+## Progress ##
+![http://qlsync.googlecode.com/files/qlsync-progress.png](http://qlsync.googlecode.com/files/qlsync-progress.png)
