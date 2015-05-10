@@ -6,11 +6,10 @@
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation
 
-import gobject
-import gtk
+from gi.repository import GObject, Gtk
 
 from qlsync.gui import MainWindow
 
-gobject.threads_init()
+GObject.threads_init()
 app = MainWindow()
-gtk.main()
+Gtk.main()

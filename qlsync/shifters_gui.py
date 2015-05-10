@@ -4,12 +4,11 @@
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation
 
-import pygtk
-import gtk
+from gi.repository import Gtk
 
 from qlsync.shifters import *
 
-class FilesystemShifterWidget(gtk.VBox):
+class FilesystemShifterWidget(Gtk.VBox):
     def __init__(self, *args):
         super(FilesystemShifterWidget, self).__init__(args)
 
@@ -23,40 +22,40 @@ class FilesystemShifterWidget(gtk.VBox):
         pass
 
 
-class FtpShifterWidget(gtk.VBox):
+class FtpShifterWidget(Gtk.VBox):
     """Settings GUI for FTP."""
 
     def __init__(self, *args):
         super(FtpShifterWidget, self).__init__(args)
 
-        self.hostBox = gtk.HBox()
-        self.hostLabel = gtk.Label("Host")
-        self.hostEntry = gtk.Entry()
-        self.hostBox.pack_start(self.hostLabel)
-        self.hostBox.pack_start(self.hostEntry)
+        self.hostBox = Gtk.HBox()
+        self.hostLabel = Gtk.Label("Host")
+        self.hostEntry = Gtk.Entry()
+        self.hostBox.pack_start(self.hostLabel, expand=True, fill=True, padding=0)
+        self.hostBox.pack_start(self.hostEntry, expand=True, fill=True, padding=0)
         self.hostLabel.show()
         self.hostEntry.show()
-        self.pack_start(self.hostBox)
+        self.pack_start(self.hostBox, expand=True, fill=True, padding=0)
         self.hostBox.show()
 
-        self.userBox = gtk.HBox()
-        self.userLabel = gtk.Label("User")
-        self.userEntry = gtk.Entry()
-        self.userBox.pack_start(self.userLabel)
-        self.userBox.pack_start(self.userEntry)
+        self.userBox = Gtk.HBox()
+        self.userLabel = Gtk.Label("User")
+        self.userEntry = Gtk.Entry()
+        self.userBox.pack_start(self.userLabel, expand=True, fill=True, padding=0)
+        self.userBox.pack_start(self.userEntry, expand=True, fill=True, padding=0)
         self.userLabel.show()
         self.userEntry.show()
-        self.pack_start(self.userBox)
+        self.pack_start(self.userBox, expand=True, fill=True, padding=0)
         self.userBox.show()
 
-        self.passwordBox = gtk.HBox()
-        self.passwordLabel = gtk.Label("Password")
-        self.passwordEntry = gtk.Entry()
-        self.passwordBox.pack_start(self.passwordLabel)
-        self.passwordBox.pack_start(self.passwordEntry)
+        self.passwordBox = Gtk.HBox()
+        self.passwordLabel = Gtk.Label("Password")
+        self.passwordEntry = Gtk.Entry()
+        self.passwordBox.pack_start(self.passwordLabel, expand=True, fill=True, padding=0)
+        self.passwordBox.pack_start(self.passwordEntry, expand=True, fill=True, padding=0)
         self.passwordLabel.show()
         self.passwordEntry.show()
-        self.pack_start(self.passwordBox)
+        self.pack_start(self.passwordBox, expand=True, fill=True, padding=0)
         self.passwordBox.show()
         # hide password text
         self.passwordEntry.set_visibility(False)
@@ -76,7 +75,7 @@ class FtpShifterWidget(gtk.VBox):
         self.userEntry.set_text("")
         self.passwordEntry.set_text("")
 
-class ShifterSelectorWidget(gtk.HBox):
+class ShifterSelectorWidget(Gtk.HBox):
     """Widget for selecting shifter, and defining parameters."""
 
     def __init__(self, *args):
@@ -88,8 +87,8 @@ class ShifterSelectorWidget(gtk.HBox):
         self.currentShifter = 0         # index into shifterWidgets
 
         # radiobuttons for selecting shifter
-        self.radioBox = gtk.VBox()
-        self.pack_start(self.radioBox)
+        self.radioBox = Gtk.VBox()
+        self.pack_start(self.radioBox, expand=True, fill=True, padding=0)
         self.radioBox.show()
 
         # shifter selectors
@@ -98,10 +97,10 @@ class ShifterSelectorWidget(gtk.HBox):
 
         # filesystem shifter
         shifterWidget = FilesystemShifterWidget()
-        self.pack_start(shifterWidget)
+        self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
         self.shifterWidgets.append(shifterWidget)
-        rb = gtk.RadioButton(group = None, label = "Filesystem") # only this one has group=None
-        self.radioBox.pack_start(rb)
+        rb = Gtk.RadioButton(group = None, label = "Filesystem") # only this one has group=None
+        self.radioBox.pack_start(rb, expand=True, fill=True, padding=0)
         rb.connect_object("toggled", self.shifter_selected, i_shifter)
         rb.show()
         self.shifterButtons.append(rb)
@@ -110,10 +109,10 @@ class ShifterSelectorWidget(gtk.HBox):
 
         # ftp shifter
         shifterWidget = FtpShifterWidget()
-        self.pack_start(shifterWidget)
+        self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
         self.shifterWidgets.append(shifterWidget)
-        rb = gtk.RadioButton(group = self.shifterButtons[0], label = "FTP")
-        self.radioBox.pack_start(rb)
+        rb = Gtk.RadioButton(group = self.shifterButtons[0], label = "FTP")
+        self.radioBox.pack_start(rb, expand=True, fill=True, padding=0)
         rb.connect_object("toggled", self.shifter_selected, i_shifter)
         rb.show()
         self.shifterButtons.append(rb)
