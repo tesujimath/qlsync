@@ -12,13 +12,20 @@ import shutil
 import sys
 import tempfile
 import threading
+import urllib
 import urlparse
 
-from quodlibet import config
-from quodlibet import const
+import quodlibet
+import quodlibet.config
+import quodlibet.formats
+import quodlibet.library
 
 from qlsync import *
 from qlsync.shifters import ShifterError
+
+def ascify(s):
+    """Convert Unicode string to ASCII, discarding out-of-bounds characters."""
+    return s.encode('ascii', 'ignore')
 
 class Device(object):
     """Access to files on the device."""
@@ -183,13 +190,31 @@ class Playlist(object):
         self.name = urlparse.unquote(relpath)
         self.onDevice = False
 
+def album_name_and_artist(album):
+    """If all songs in the album are by the same artist, that is it, else Various."""
+    artist = None
+    album_name = None
+    for song in album.songs:
+        if album_name is None:
+            album_name = song['album']
+        elif song['album'] != album_name:
+            # this shouldn't happen, all should be the same
+            raise KeyError
+        if artist is None:
+            artist = song['artist']
+        elif song['artist'] != artist:
+            artist = "Various"
+    return album_name, artist
+
 class Library(object):
     """Access to music files and playlists."""
     def __init__(self):
-        config.init(const.CONFIG)
-        scanSettings = config.get("settings", "scan")
+        quodlibet.config.init(quodlibet.const.CONFIG)
+        quodlibet.formats.init()
+        scanSettings = quodlibet.config.get("settings", "scan")
         self.musicdirs = scanSettings.split(":")
         self.playlist_dir = os.path.expanduser("~/.quodlibet/playlists")
+        self.quodlibet_library = quodlibet.library.init(quodlibet.const.LIBRARY)
 
     def playlists(self):
         return sorted(os.listdir(self.playlist_dir))
@@ -212,6 +237,29 @@ class Library(object):
             if relpath != None:
                 yield(relpath, abspath)
         pf.close()
+
+    def album_playlist(self, prefix, album_artist, album_name):
+        playlist_file = "%s%s - %s" % (prefix, ascify(album_artist), ascify(album_name))
+        return os.path.join(self.playlist_dir, urllib.quote(playlist_file, safe = "-"))
+
+    def create_album_playlists(self, prefix = ""):
+        """Create a playlist for each album in the library."""
+        keys = self.quodlibet_library.albums.keys()
+        for key in keys:
+            album = self.quodlibet_library.albums[key]
+            try:
+                album_name, album_artist = album_name_and_artist(album)
+                #print("%s - %s" % (album_artist, album_name))
+                with open(self.album_playlist(prefix, album_artist, album_name), 'w') as playlist:
+                    tracks = {}
+                    for song in album.songs:
+                        tracks[song["tracknumber"]] = song
+                    for tracknumber in sorted(tracks.keys()):
+                        playlist.write("%s\n" % tracks[tracknumber]['~filename'])
+            except KeyError:
+                # skip badly tagged album
+                sys.stderr.write("Skipping bad album %s\n" % str(album))
+
 
 class Syncer(object):
     """Playlist synchronizer.

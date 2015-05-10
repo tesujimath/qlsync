@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+#
+# Copyright 2015 Simon Guest
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation
+#
+# Create playlists from albums in Quodlibet library 
+
+import argparse
+
+import qlsync.engine
+
+def main():
+    # parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--prefix", default="", help="prefix for album playlists")
+    args = parser.parse_args()
+
+    library = qlsync.engine.Library()
+    library.create_album_playlists(args.prefix)
+
+if __name__ == '__main__':
+    main()
