@@ -189,9 +189,9 @@ class MainWindow(Gtk.Window):
 
     def show_error_message(self, message):
         md = Gtk.MessageDialog(self, 
-                               Gtk.DIALOG_DESTROY_WITH_PARENT,
-                               Gtk.MESSAGE_ERROR, 
-                               Gtk.BUTTONS_CLOSE,
+                               Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                               Gtk.MessageType.ERROR, 
+                               Gtk.ButtonsType.CLOSE,
                                message)
         md.run()
         md.destroy()
