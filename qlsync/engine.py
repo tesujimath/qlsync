@@ -190,6 +190,81 @@ class Playlist(object):
         self.name = urlparse.unquote(relpath)
         self.onDevice = False
 
+def tracknumber_as_int(song):
+    tracknumber = song['tracknumber']
+    slash_pos = tracknumber.find('/')
+    if slash_pos >= 0:
+        return int(tracknumber[:slash_pos])
+    else:
+        return int(tracknumber)
+
+class RefinedAlbum:
+    def __init__(self, album_name, artist, tracks):
+        self.artist = artist
+        self.name = album_name
+        self.songs = []
+        for track in range(1, 1 + len(tracks.keys())):
+            self.songs.append(tracks[track])
+
+def has_all_tracks(dict, min = 2):
+    """Need at least min tracks."""
+    has_all = sorted(dict.keys()) == list(range(1, 1 + len(dict.keys()))) and len(dict) >= min
+    return has_all
+
+def refine_album(composite_album):
+    """May have to split an album up, e.g. Greatest Hits may be several albums rolled into one."""
+    refined_albums = []
+    component_albums = {}
+    bad_album = False
+    artist = None
+    album_name = None
+    track = None
+    for song in composite_album.songs:
+        try:
+            artist = song['artist']
+            album_name = song['album']
+            track = tracknumber_as_int(song)
+        except KeyError:
+            bad_album = True
+        if not bad_album:
+            if not component_albums.has_key(album_name):
+                component_albums[album_name] = {}
+            if not component_albums[album_name].has_key(artist):
+                component_albums[album_name][artist] = {}
+            component_albums[album_name][artist][track] = song
+    if bad_album:
+        component_albums = {}
+        sys.stderr.write("Badly tagged album: %s - %s\n" % (str(artist), str(album_name)))
+    for album_name in component_albums.keys():
+        various_artists = {}
+        for artist in component_albums[album_name].keys():
+            # if we've got consecutive tracks, then make it a standalone album
+            if has_all_tracks(component_albums[album_name][artist]):
+                refined_albums.append(RefinedAlbum(album_name, artist, component_albums[album_name].pop(artist)))
+            else:
+                # collect into various artists
+                for track in component_albums[album_name][artist].keys():
+                    various_artists[track] = component_albums[album_name][artist][track]
+        # anything remaining may be a various artists album
+        if len(various_artists) == 0:
+            pass
+        elif has_all_tracks(various_artists):
+            refined_albums.append(RefinedAlbum(album_name, "Various", various_artists))
+        else:
+            # find an artist for the incomplete album
+            artist = None
+            for track in range(1, 20):
+                try:
+                    artist = various_artists[track]['artist']
+                except KeyError:
+                    pass
+                if artist is not None:
+                    break
+            if artist is None:
+                artist = "Unknown"
+            sys.stderr.write("Incomplete album: %s - %s - %s\n" % (artist, album_name, [track for track in sorted(various_artists.keys())]))
+    return refined_albums
+
 def album_name_and_artist(album):
     """If all songs in the album are by the same artist, that is it, else Various."""
     artist = None
@@ -247,19 +322,10 @@ class Library(object):
         keys = self.quodlibet_library.albums.keys()
         for key in keys:
             album = self.quodlibet_library.albums[key]
-            try:
-                album_name, album_artist = album_name_and_artist(album)
-                #print("%s - %s" % (album_artist, album_name))
-                with open(self.album_playlist(prefix, album_artist, album_name), 'w') as playlist:
-                    tracks = {}
-                    for song in album.songs:
-                        tracks[song["tracknumber"]] = song
-                    for tracknumber in sorted(tracks.keys()):
-                        playlist.write("%s\n" % tracks[tracknumber]['~filename'])
-            except KeyError:
-                # skip badly tagged album
-                sys.stderr.write("Skipping bad album %s\n" % str(album))
-
+            for refined_album in refine_album(album):
+                with open(self.album_playlist(prefix, refined_album.artist, refined_album.name), 'w') as playlist:
+                    for song in refined_album.songs:
+                        playlist.write("%s\n" % song['~filename'])
 
 class Syncer(object):
     """Playlist synchronizer.
