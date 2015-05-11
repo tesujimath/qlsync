@@ -7,6 +7,7 @@
 import filecmp
 import ftplib
 import os
+import paramiko
 import shutil
 
 class ShifterError(BaseException):
@@ -163,3 +164,85 @@ class FtpShifter(object):
             self.ftp.quit()
         except ftplib.all_errors as e:
             raise ShifterError(str(e))
+
+class SftpShifter(object):
+    """Use SFTP to transfer files."""
+    def __init__(self, host, user, port = 22):
+        self.host = host
+        self.user = user
+        self.port = port
+
+    def __str__(self):
+        return "SftpShifter(host=" + self.host + ",user=" + self.user + ",port=" + str(self.port) + ")"
+
+    def open(self):
+        self.ssh_agent = paramiko.Agent()
+        keys = self.ssh_agent.get_keys()
+        if len(keys) != 1:
+            raise ShifterError("Failed to get a private key from ssh-agent")
+        try:
+            self.transport = paramiko.Transport((self.host, self.port))
+            self.transport.connect(username=self.user, pkey=keys[0])
+            self.sftp_client = paramiko.SFTPClient.from_transport(self.transport)
+        except paramiko.SSHException as e:
+            raise ShifterError(str(e))
+
+    def path_exists(self, dst):
+        try:
+            s = self.sftp_client.stat(dst)
+            return True
+        except (paramiko.SFTPError,IOError) as e:
+            return False
+
+    def makedirs(self, dst):
+        if self.path_exists(dst):
+            pass
+        else:
+            dirname = os.path.dirname(dst)
+            if dirname != '':
+                self.makedirs(dirname)
+            try:
+                self.sftp_client.mkdir(dst)
+            except (paramiko.SFTPError,IOError) as e:
+                raise ShifterError(str(e))
+
+    def uploadfile(self, src, dst):
+        try:
+            self.sftp_client.put(src, dst)
+        except (paramiko.SFTPError,IOError) as e:
+            raise ShifterError(str(e))
+
+    def readlines(self, src):
+        lines = []
+        try:
+            f = self.sftp_client.open(src, 'r')
+            for line in f:
+                lines.append(line.rstrip('\n'))
+            f.close()
+        except (paramiko.SFTPError,IOError) as e:
+            raise ShifterError(str(e))
+        return lines
+
+    def removefile(self, dst):
+        try:
+            self.sftp_client.remove(dst)
+        except (paramiko.SFTPError,IOError) as e:
+            raise ShifterError(str(e))
+
+    def removedir_if_empty(self, dst):
+        try:
+            self.sftp_client.rmdir(dst)
+        except (paramiko.SFTPError,IOError) as e:
+            # wasn't empty, so ignore
+            pass
+
+    def ls(self, dst):
+        """Return directory listing."""
+        try:
+            files = self.sftp_client.listdir(dst)
+        except (paramiko.SFTPError,IOError) as e:
+             raise ShifterError(str(e))
+        return files
+
+    def close(self):
+        self.transport.close()

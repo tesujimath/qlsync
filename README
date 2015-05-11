@@ -2,9 +2,9 @@ qlsync is a small GUI program for maintaining playlists and music
 files on a portable device.  It uses Quodlibet to find playlists and
 music files, but is otherwise independent.
 
-Different transport protocols are supported to connect to your device.
-So far only filesystem (i.e. mounted mass storage devive) and FTP are
-provided.  MTP is not currently supported.
+Different transport protocols are supported to connect to your device:
+filesystem (i.e. mounted mass storage devive), FTP, and SFTP.
+MTP is not currently supported.
 
 The program enables you to specify the parameters (transport
 protocol, music location, etc) for various devices.  These are saved

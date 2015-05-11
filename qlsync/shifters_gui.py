@@ -75,6 +75,65 @@ class FtpShifterWidget(Gtk.VBox):
         self.userEntry.set_text("")
         self.passwordEntry.set_text("")
 
+class SftpShifterWidget(Gtk.VBox):
+    """Settings GUI for SFTP."""
+
+    DEFAULT_PORT = 22
+
+    def __init__(self, *args):
+        super(SftpShifterWidget, self).__init__(args)
+
+        self.hostBox = Gtk.HBox()
+        self.hostLabel = Gtk.Label("Host")
+        self.hostEntry = Gtk.Entry()
+        self.hostBox.pack_start(self.hostLabel, expand=True, fill=True, padding=0)
+
+        self.hostBox.pack_start(self.hostEntry, expand=True, fill=True, padding=0)
+        self.hostLabel.show()
+        self.hostEntry.show()
+        self.pack_start(self.hostBox, expand=True, fill=True, padding=0)
+        self.hostBox.show()
+
+        self.userBox = Gtk.HBox()
+        self.userLabel = Gtk.Label("User")
+        self.userEntry = Gtk.Entry()
+        self.userBox.pack_start(self.userLabel, expand=True, fill=True, padding=0)
+        self.userBox.pack_start(self.userEntry, expand=True, fill=True, padding=0)
+        self.userLabel.show()
+        self.userEntry.show()
+        self.pack_start(self.userBox, expand=True, fill=True, padding=0)
+        self.userBox.show()
+
+        self.portBox = Gtk.HBox()
+        self.portLabel = Gtk.Label("Port")
+        self.portEntry = Gtk.Entry()
+        self.portBox.pack_start(self.portLabel, expand=True, fill=True, padding=0)
+        self.portBox.pack_start(self.portEntry, expand=True, fill=True, padding=0)
+        self.portLabel.show()
+        self.portEntry.show()
+        self.pack_start(self.portBox, expand=True, fill=True, padding=0)
+        self.portBox.show()
+
+    def display(self, shifter):
+        self.hostEntry.set_text(shifter.host)
+        self.userEntry.set_text(shifter.user),
+        self.portEntry.set_text(str(shifter.port))
+
+    def create_shifter(self):
+        try:
+            port = int(self.portEntry.get_text())
+        except ValueError:
+            port = SftpShifterWidget.DEFAULT_PORT
+            self.portEntry.set_text(str(port))
+        return SftpShifter(self.hostEntry.get_text(),
+                           self.userEntry.get_text(),
+                           port)
+
+    def clear(self):
+        self.hostEntry.set_text("")
+        self.userEntry.set_text("")
+        self.portEntry.set_text(str(SftpShifterWidget.DEFAULT_PORT))
+
 class ShifterSelectorWidget(Gtk.HBox):
     """Widget for selecting shifter, and defining parameters."""
 
@@ -117,6 +176,18 @@ class ShifterSelectorWidget(Gtk.HBox):
         rb.show()
         self.shifterButtons.append(rb)
         self.indexByClass['FtpShifter'] = i_shifter
+        i_shifter += 1
+
+        # sftp shifter
+        shifterWidget = SftpShifterWidget()
+        self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
+        self.shifterWidgets.append(shifterWidget)
+        rb = Gtk.RadioButton(group = self.shifterButtons[0], label = "SFTP")
+        self.radioBox.pack_start(rb, expand=True, fill=True, padding=0)
+        rb.connect_object("toggled", self.shifter_selected, i_shifter)
+        rb.show()
+        self.shifterButtons.append(rb)
+        self.indexByClass['SftpShifter'] = i_shifter
         i_shifter += 1
 
         self.clear()
