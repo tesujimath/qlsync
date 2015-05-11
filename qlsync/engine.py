@@ -99,8 +99,10 @@ class Settings(object):
                 self.devices = settings
                 self.currentDeviceIndex = currentDeviceIndex
                 f.close()
-            except IOError as e:
-                print "load settings failed: " + str(e)
+            except Exception as e:
+                oldConfigFile = "%s.old" % self.configFile
+                print("load settings failed: %s, renaming %s as %s" % (str(e), self.configFile, oldConfigFile))
+                os.rename(self.configFile, oldConfigFile)
         self.clear_non_persistent()
 
     def save(self):
