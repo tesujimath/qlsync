@@ -8,7 +8,7 @@ URL:            https://github.com/tesujimath/qlsync
 Source0:        qlsync-%{version}.tgz
 
 BuildRequires:  python2-devel
-Requires:       pygobject2 pygtk2 quodlibet python-paramiko
+Requires:       pygobject2 pygtk2 quodlibet python-paramiko android-tools
 
 %description
 qlsync is a small GUI program for maintaining playlists and music

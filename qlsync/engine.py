@@ -81,6 +81,10 @@ class Device(object):
         else:
             return None
 
+    def flush(self):
+        """Clean up and flush out changes."""
+        self.shifter.flush(self.musicdir)
+        self.shifter.close()
 
 class Settings(object):
     def __init__(self, configFile = os.path.expanduser("~/.qlsync")):
@@ -533,5 +537,5 @@ class Scribe(threading.Thread):
             self.device.shifter.removedir_if_empty(dstDir)
         if not cancelled:
             progress = 1
-        self.device.shifter.close()
+        self.device.flush()
         self.progress_callback(progress, True) # complete

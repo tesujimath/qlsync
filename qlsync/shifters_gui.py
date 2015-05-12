@@ -134,6 +134,33 @@ class SftpShifterWidget(Gtk.VBox):
         self.userEntry.set_text("")
         self.portEntry.set_text(str(SftpShifterWidget.DEFAULT_PORT))
 
+class AdbShifterWidget(Gtk.VBox):
+    """Settings GUI for ADB."""
+
+    def __init__(self, *args):
+        super(AdbShifterWidget, self).__init__(args)
+
+        self.serialBox = Gtk.HBox()
+        self.serialLabel = Gtk.Label("Android serial")
+        self.serialEntry = Gtk.Entry()
+        self.serialBox.pack_start(self.serialLabel, expand=True, fill=True, padding=0)
+
+        self.serialBox.pack_start(self.serialEntry, expand=True, fill=True, padding=0)
+        self.serialLabel.show()
+        self.serialEntry.show()
+        self.pack_start(self.serialBox, expand=True, fill=True, padding=0)
+        self.serialBox.show()
+
+    def display(self, shifter):
+        self.serialEntry.set_text(shifter.serial)
+
+    def create_shifter(self):
+        print("AdbShifterWidget.create_shifter()")
+        return AdbShifter(self.serialEntry.get_text())
+
+    def clear(self):
+        self.serialEntry.set_text("")
+
 class ShifterSelectorWidget(Gtk.HBox):
     """Widget for selecting shifter, and defining parameters."""
 
@@ -188,6 +215,18 @@ class ShifterSelectorWidget(Gtk.HBox):
         rb.show()
         self.shifterButtons.append(rb)
         self.indexByClass['SftpShifter'] = i_shifter
+        i_shifter += 1
+
+        # adb shifter
+        shifterWidget = AdbShifterWidget()
+        self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
+        self.shifterWidgets.append(shifterWidget)
+        rb = Gtk.RadioButton(group = self.shifterButtons[0], label = "ADB")
+        self.radioBox.pack_start(rb, expand=True, fill=True, padding=0)
+        rb.connect_object("toggled", self.shifter_selected, i_shifter)
+        rb.show()
+        self.shifterButtons.append(rb)
+        self.indexByClass['AdbShifter'] = i_shifter
         i_shifter += 1
 
         self.clear()

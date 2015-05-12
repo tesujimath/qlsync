@@ -9,6 +9,7 @@ import ftplib
 import os
 import paramiko
 import shutil
+import subprocess
 
 class ShifterError(BaseException):
     def __init__(self, message):
@@ -76,10 +77,12 @@ class FilesystemShifter(object):
              raise ShifterError(str(e))
         return files
 
-    def close(self):
+    def flush(self, musicdir):
         # ensure everything is on the disk
         os.system("sync")
 
+    def close(self):
+        pass
 
 class FtpShifter(object):
     """Use ftp to transfer files."""
@@ -158,6 +161,9 @@ class FtpShifter(object):
             raise ShifterError(str(e))
         # may be relative or absolute, so cope with both
         return [ os.path.basename(x) for x in maybe_abs_files ]
+
+    def flush(self, musicdir):
+        pass
 
     def close(self):
         try:
@@ -244,5 +250,94 @@ class SftpShifter(object):
              raise ShifterError(str(e))
         return files
 
+    def flush(self, musicdir):
+        pass
+
     def close(self):
         self.transport.close()
+
+def quote(x):
+    if " " in x:
+        return "'%s'" % x
+    else:
+        return x
+
+def quote_all(xs):
+    return [quote(x) for x in xs]
+
+class AdbShifter(object):
+    """Use ADB to transfer files."""
+    def __init__(self, serial):
+        print("AdbShifter::__init__(%s)" % serial)
+        self.serial = serial
+
+    def __str__(self):
+        return "AdbShifter(serial=" + self.serial + ")"
+
+    def adb(self, commands):
+        """Run adb command for current device, return (rc, stdout, stderr)."""
+        print("%s" % ' '.join(["adb", "-s", self.serial] + commands))
+        adb = subprocess.Popen(["adb", "-s", self.serial] + commands, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        adb.wait()
+        stdout_lines = [line.rstrip('\r\n') for line in adb.stdout.readlines()]
+        stderr_lines = [line.rstrip('\r\n') for line in adb.stderr.readlines()]
+        return (adb.returncode, stdout_lines, stderr_lines)
+
+    def open(self):
+        """Confirm the device is there."""
+        print("AdbShifter::open()")
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "echo"])
+        if rc != 0:
+            raise ShifterError(", ".join(stderr_lines))
+
+    def path_exists(self, dst):
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "ls", "-d", dst])
+        return rc == 0 and stdout_lines and stdout_lines[0] == dst
+
+    def makedirs(self, dst):
+        if self.path_exists(dst):
+            pass
+        else:
+            (rc, stdout_lines, stderr_lines) = self.adb(["shell", "mkdir", "-p", dst])
+            if rc != 0:
+                raise ShifterError(", ".join(stderr_lines))
+
+    def uploadfile(self, src, dst):
+        (rc, stdout_lines, stderr_lines) = self.adb(["push", src, dst])
+        if rc != 0:
+            raise ShifterError(", ".join(stderr_lines))
+
+    def readlines(self, dst):
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "cat", dst])
+        if rc != 0:
+            raise ShifterError(", ".join(stderr_lines))
+        print("readlines %s\n%s" % (dst, '\n'.join(stdout_lines)))
+        return stdout_lines
+
+    def removefile(self, dst):
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "rm", dst])
+        if rc != 0:
+            raise ShifterError(", ".join(stderr_lines))
+
+    def removedir_if_empty(self, dst):
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "rmdir", dst])
+        # ignore all errors, since this fails if not empty and we don't care
+
+    def ls(self, dst):
+        """Return directory listing."""
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "ls", dst])
+        if rc != 0:
+            raise ShifterError(", ".join(stderr_lines))
+        print("ls %s\n%s" % (dst, '\n'.join(stdout_lines)))
+        return stdout_lines
+
+    def flush(self, musicdir):
+        """Trigger a rescan of the Music folder."""
+        print("AdbShifter::flush()")
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "am", "broadcast", "all", "android.intent.action.MEDIA_MOUNTED", "-d", musicdir])
+        if rc != 0:
+            raise ShifterError(", ".join(stderr_lines))
+
+    def close(self):
+        print("AdbShifter::close()")
+        pass
