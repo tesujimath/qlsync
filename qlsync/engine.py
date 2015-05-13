@@ -46,26 +46,30 @@ class Device(object):
                ",shifter=" + str(self.shifter) + ")"
 
     def playlist_dir(self):
-        return os.path.join(self.musicdir, "Playlists")
+        return os.path.join(self.musicdir, "qlsync")
 
     def musicfile_playlist_path(self, musicfile):
         """Return a relative path to music from playlist."""
-        return os.path.join("..", musicfile) # because playlists are put into Playlists subdir
+        return os.path.join("..", musicfile) # because playlists are put into qlsync subdir
 
     def playlist_file(self, playlist_name):
-        return os.path.join("Playlists", playlist_name + ".m3u")
+        # We don't use a playlist file extension, as Android seems to
+        # keep these playlists around after we have deleted them.
+        # If you want actual playlists on your device, copy them by
+        # hand - or use a future version of this program ;-)
+        return os.path.join("qlsync", playlist_name + ".qls")
 
     def musicfile_actual_path(self, musicfile_in_playlist):
         """Given a musicfile in a device playlist, return the actual pathname.  The opposite of musicfile_playlist_path."""
-        return os.path.normpath(os.path.join("Playlists", musicfile_in_playlist))
+        return os.path.normpath(os.path.join("qlsync", musicfile_in_playlist))
 
     def scan_playlists(self):
-        """Get all the playlists from the device, by looking in the playlist dir for m3u files."""
+        """Get all the playlists from the device, by looking in the playlist dir for qls files."""
         self.clear_non_persistent()
         self.shifter.open()
         if self.shifter.path_exists(self.playlist_dir()):
             for f in self.shifter.ls(self.playlist_dir()):
-                m = re.match(r'^(.*)\.m3u', f)
+                m = re.match(r'^(.*)\.qls', f)
                 if m:
                     playlist_file = m.group(0)
                     playlist_name = m.group(1)
@@ -74,12 +78,13 @@ class Device(object):
                     self.all_songs.update(self.playlist_files[playlist_name])
         self.shifter.close()
 
-    def playlist_name(self, playlistfile):
-        m = re.match(r'^(.*)\.m3u', f)
-        if m:
-            return m.group(1)
-        else:
-            return None
+    # TODO remove obsolete:
+    # def playlist_name(self, playlistfile):
+    #     m = re.match(r'^(.*)\.m3u', f)
+    #     if m:
+    #         return m.group(1)
+    #     else:
+    #         return None
 
     def flush(self):
         """Clean up and flush out changes."""
