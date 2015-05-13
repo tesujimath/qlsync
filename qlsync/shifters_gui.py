@@ -87,7 +87,6 @@ class SftpShifterWidget(Gtk.VBox):
         self.hostLabel = Gtk.Label("Host")
         self.hostEntry = Gtk.Entry()
         self.hostBox.pack_start(self.hostLabel, expand=True, fill=True, padding=0)
-
         self.hostBox.pack_start(self.hostEntry, expand=True, fill=True, padding=0)
         self.hostLabel.show()
         self.hostEntry.show()
@@ -140,11 +139,20 @@ class AdbShifterWidget(Gtk.VBox):
     def __init__(self, *args):
         super(AdbShifterWidget, self).__init__(args)
 
+        self.sdcardrootBox = Gtk.HBox()
+        self.sdcardrootLabel = Gtk.Label("SD card root")
+        self.sdcardrootEntry = Gtk.Entry()
+        self.sdcardrootBox.pack_start(self.sdcardrootLabel, expand=True, fill=True, padding=0)
+        self.sdcardrootBox.pack_start(self.sdcardrootEntry, expand=True, fill=True, padding=0)
+        self.sdcardrootLabel.show()
+        self.sdcardrootEntry.show()
+        self.pack_start(self.sdcardrootBox, expand=True, fill=True, padding=0)
+        self.sdcardrootBox.show()
+
         self.serialBox = Gtk.HBox()
         self.serialLabel = Gtk.Label("Android serial")
         self.serialEntry = Gtk.Entry()
         self.serialBox.pack_start(self.serialLabel, expand=True, fill=True, padding=0)
-
         self.serialBox.pack_start(self.serialEntry, expand=True, fill=True, padding=0)
         self.serialLabel.show()
         self.serialEntry.show()
@@ -156,7 +164,7 @@ class AdbShifterWidget(Gtk.VBox):
 
     def create_shifter(self):
         print("AdbShifterWidget.create_shifter()")
-        return AdbShifter(self.serialEntry.get_text())
+        return AdbShifter(self.sdcardrootEntry.get_text(), self.serialEntry.get_text())
 
     def clear(self):
         self.serialEntry.set_text("")

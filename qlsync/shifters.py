@@ -77,7 +77,7 @@ class FilesystemShifter(object):
              raise ShifterError(str(e))
         return files
 
-    def flush(self, musicdir):
+    def flush(self):
         # ensure everything is on the disk
         os.system("sync")
 
@@ -162,7 +162,7 @@ class FtpShifter(object):
         # may be relative or absolute, so cope with both
         return [ os.path.basename(x) for x in maybe_abs_files ]
 
-    def flush(self, musicdir):
+    def flush(self):
         pass
 
     def close(self):
@@ -250,7 +250,7 @@ class SftpShifter(object):
              raise ShifterError(str(e))
         return files
 
-    def flush(self, musicdir):
+    def flush(self):
         pass
 
     def close(self):
@@ -267,8 +267,9 @@ def quote_all(xs):
 
 class AdbShifter(object):
     """Use ADB to transfer files."""
-    def __init__(self, serial):
-        print("AdbShifter::__init__(%s)" % serial)
+    def __init__(self, sdcardroot, serial):
+        print("AdbShifter::__init__(%s, %s)" % (sdcardroot, serial))
+        self.sdcardroot = sdcardroot
         self.serial = serial
 
     def __str__(self):
@@ -281,6 +282,7 @@ class AdbShifter(object):
         adb.wait()
         stdout_lines = [line.rstrip('\r\n') for line in adb.stdout.readlines()]
         stderr_lines = [line.rstrip('\r\n') for line in adb.stderr.readlines()]
+        print("%s\n%s" % ('\n'.join(stdout_lines), '\n'.join(stdout_lines)))
         return (adb.returncode, stdout_lines, stderr_lines)
 
     def open(self):
@@ -331,10 +333,10 @@ class AdbShifter(object):
         print("ls %s\n%s" % (dst, '\n'.join(stdout_lines)))
         return stdout_lines
 
-    def flush(self, musicdir):
-        """Trigger a rescan of the Music folder."""
+    def flush(self):
+        """Trigger a rescan of the sdcard."""
         print("AdbShifter::flush()")
-        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "am", "broadcast", "all", "android.intent.action.MEDIA_MOUNTED", "-d", musicdir])
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "am", "broadcast", "-a", "android.intent.action.MEDIA_MOUNTED", "-d", "file://%s" % self.sdcardroot])
         if rc != 0:
             raise ShifterError(", ".join(stderr_lines))
 

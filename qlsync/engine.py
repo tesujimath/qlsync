@@ -83,7 +83,7 @@ class Device(object):
 
     def flush(self):
         """Clean up and flush out changes."""
-        self.shifter.flush(self.musicdir)
+        self.shifter.flush()
         self.shifter.close()
 
 class Settings(object):
