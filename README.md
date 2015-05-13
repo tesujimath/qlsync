@@ -7,10 +7,6 @@ filesystem (i.e. mounted mass storage devive), FTP, SFTP, and ADB
 (Android Debug Bridge).  MTP will never be supported; it is utterly
 hopeless.
 
-For Android devices, ADB is highly recommended.  You will need to
-enable USB debugging (in developer options, which appear after you tap
-repeatedly on About -> Software Information -> More -> Build Number).
-
 The program enables you to specify the parameters (transport protocol,
 music location, etc) for various devices.  These are saved in the file
 ~/.qlsync.  Note that any password you specify for e.g. ftp connection
@@ -55,6 +51,24 @@ everything copied or deleted.
 So why does qlsync just look at playlists, rather than the actual
 files on the device?  It's to support the two-stage process for
 [loading music onto iPods](README.iPod.md).
+
+Android Devices
+===============
+For Android devices, ADB is highly recommended.  You will need to
+enable USB debugging (in developer options, which appear after you tap
+repeatedly on About -> Software Information -> More -> Build Number).
+
+Android devices are identified by serial number.  To find this, ensure
+there is only one device plugged into your PC, then click the `Get
+Device Serial` button.
+
+As an example, on my HTC One S, I use these settings:
+
+* music directory `/storage/sdcard0/Music`
+* protocol `ADB`
+* SD card root `/storage/sdcard0`
+
+Note: the SD card root is required to trigger a rescan of uploaded music.
 
 Comments and requests for improvement welcome.
 
