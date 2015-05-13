@@ -9,8 +9,9 @@ from gi.repository import Gtk
 from qlsync.shifters import *
 
 class FilesystemShifterWidget(Gtk.VBox):
-    def __init__(self, *args):
+    def __init__(self, error_fn, *args):
         super(FilesystemShifterWidget, self).__init__(args)
+        self.error_fn = error_fn
 
     def display(self, shifter):
         pass
@@ -25,8 +26,9 @@ class FilesystemShifterWidget(Gtk.VBox):
 class FtpShifterWidget(Gtk.VBox):
     """Settings GUI for FTP."""
 
-    def __init__(self, *args):
+    def __init__(self, error_fn, *args):
         super(FtpShifterWidget, self).__init__(args)
+        self.error_fn = error_fn
 
         self.hostBox = Gtk.HBox()
         self.hostLabel = Gtk.Label("Host")
@@ -80,8 +82,9 @@ class SftpShifterWidget(Gtk.VBox):
 
     DEFAULT_PORT = 22
 
-    def __init__(self, *args):
+    def __init__(self, error_fn, *args):
         super(SftpShifterWidget, self).__init__(args)
+        self.error_fn = error_fn
 
         self.hostBox = Gtk.HBox()
         self.hostLabel = Gtk.Label("Host")
@@ -136,8 +139,9 @@ class SftpShifterWidget(Gtk.VBox):
 class AdbShifterWidget(Gtk.VBox):
     """Settings GUI for ADB."""
 
-    def __init__(self, *args):
+    def __init__(self, error_fn, *args):
         super(AdbShifterWidget, self).__init__(args)
+        self.error_fn = error_fn
 
         self.sdcardrootBox = Gtk.HBox()
         self.sdcardrootLabel = Gtk.Label("SD card root")
@@ -159,6 +163,11 @@ class AdbShifterWidget(Gtk.VBox):
         self.pack_start(self.serialBox, expand=True, fill=True, padding=0)
         self.serialBox.show()
 
+        self.getDeviceSerialButton = Gtk.Button("Get Device Serial")
+        self.getDeviceSerialButton.connect("clicked", self.get_device_serial)
+        self.pack_start(self.getDeviceSerialButton, expand=True, fill=True, padding=0)
+        self.getDeviceSerialButton.show()
+
     def display(self, shifter):
         self.serialEntry.set_text(shifter.serial)
 
@@ -169,10 +178,24 @@ class AdbShifterWidget(Gtk.VBox):
     def clear(self):
         self.serialEntry.set_text("")
 
+    def get_device_serial(self, evt):
+        """List attached devices;  if there's just one, grab it's serial number."""
+        (rc, stdout_lines, stderr_lines) = adb(["devices"])
+        # strip lines, and discard empties
+        stdout_lines = [line.strip() for line in stdout_lines if line.strip() != ""]
+        if len(stdout_lines) == 2 and stdout_lines[0].lower().lstrip().startswith("list"):
+            tokens = stdout_lines[1].split()
+            if len(tokens) == 2 and tokens[1].lower() == "device":
+                self.serialEntry.set_text(tokens[0])
+                return
+        # Failed, so give some feedback
+        message = "%s\n\n%s\n%s" % ("Failed to find unique device", '\n'.join(stdout_lines), '\n'.join(stderr_lines))
+        self.error_fn(message)
+
 class ShifterSelectorWidget(Gtk.HBox):
     """Widget for selecting shifter, and defining parameters."""
 
-    def __init__(self, *args):
+    def __init__(self, error_fn, *args):
         super(ShifterSelectorWidget, self).__init__(args)
 
         # shifter widgets
@@ -190,7 +213,7 @@ class ShifterSelectorWidget(Gtk.HBox):
         i_shifter = 0
 
         # filesystem shifter
-        shifterWidget = FilesystemShifterWidget()
+        shifterWidget = FilesystemShifterWidget(error_fn)
         self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
         self.shifterWidgets.append(shifterWidget)
         rb = Gtk.RadioButton(group = None, label = "Filesystem") # only this one has group=None
@@ -202,7 +225,7 @@ class ShifterSelectorWidget(Gtk.HBox):
         i_shifter += 1
 
         # ftp shifter
-        shifterWidget = FtpShifterWidget()
+        shifterWidget = FtpShifterWidget(error_fn)
         self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
         self.shifterWidgets.append(shifterWidget)
         rb = Gtk.RadioButton(group = self.shifterButtons[0], label = "FTP")
@@ -214,7 +237,7 @@ class ShifterSelectorWidget(Gtk.HBox):
         i_shifter += 1
 
         # sftp shifter
-        shifterWidget = SftpShifterWidget()
+        shifterWidget = SftpShifterWidget(error_fn)
         self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
         self.shifterWidgets.append(shifterWidget)
         rb = Gtk.RadioButton(group = self.shifterButtons[0], label = "SFTP")
@@ -226,7 +249,7 @@ class ShifterSelectorWidget(Gtk.HBox):
         i_shifter += 1
 
         # adb shifter
-        shifterWidget = AdbShifterWidget()
+        shifterWidget = AdbShifterWidget(error_fn)
         self.pack_start(shifterWidget, expand=True, fill=True, padding=0)
         self.shifterWidgets.append(shifterWidget)
         rb = Gtk.RadioButton(group = self.shifterButtons[0], label = "ADB")

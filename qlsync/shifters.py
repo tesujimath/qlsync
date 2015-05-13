@@ -265,6 +265,23 @@ def quote(x):
 def quote_all(xs):
     return [quote(x) for x in xs]
 
+def adb(commands, serial = None):
+    """Run adb command for given device, return (rc, stdout, stderr)."""
+    if serial:
+        command_prefix = ["adb", "-s", serial]
+    else:
+        command_prefix = ["adb"]
+    print("%s" % ' '.join(command_prefix + commands))
+    try:
+        adb = subprocess.Popen(command_prefix + commands, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        adb.wait()
+        stdout_lines = [line.rstrip('\r\n') for line in adb.stdout.readlines()]
+        stderr_lines = [line.rstrip('\r\n') for line in adb.stderr.readlines()]
+        print("%s\n%s" % ('\n'.join(stdout_lines), '\n'.join(stdout_lines)))
+        return (adb.returncode, stdout_lines, stderr_lines)
+    except OSError as e:
+        raise ShifterError("adb %s" % str(e))
+
 class AdbShifter(object):
     """Use ADB to transfer files."""
     def __init__(self, sdcardroot, serial):
@@ -276,17 +293,7 @@ class AdbShifter(object):
         return "AdbShifter(serial=" + self.serial + ")"
 
     def adb(self, commands):
-        """Run adb command for current device, return (rc, stdout, stderr)."""
-        print("%s" % ' '.join(["adb", "-s", self.serial] + commands))
-        try:
-            adb = subprocess.Popen(["adb", "-s", self.serial] + commands, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-            adb.wait()
-            stdout_lines = [line.rstrip('\r\n') for line in adb.stdout.readlines()]
-            stderr_lines = [line.rstrip('\r\n') for line in adb.stderr.readlines()]
-            print("%s\n%s" % ('\n'.join(stdout_lines), '\n'.join(stdout_lines)))
-            return (adb.returncode, stdout_lines, stderr_lines)
-        except OSError as e:
-            raise ShifterError("adb %s" % str(e))
+        return adb(commands, self.serial)
 
     def open(self):
         """Confirm the device is there."""

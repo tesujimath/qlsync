@@ -11,7 +11,7 @@ from qlsync.shifters_gui import ShifterSelectorWidget
 from qlsync.shifters import ShifterError
 
 class SettingsDialog(object):
-    def __init__(self, parent, settings):
+    def __init__(self, parent, settings, error_fn):
         self.settings = settings
         self.window = Gtk.Dialog("Settings", parent, Gtk.DialogFlags.MODAL)
         self.window.connect("destroy", self.destroy)
@@ -47,7 +47,7 @@ class SettingsDialog(object):
         self.deviceTable.show()
 
         # shifter selector
-        self.shifterSettings = ShifterSelectorWidget()
+        self.shifterSettings = ShifterSelectorWidget(error_fn)
         self.layout.pack_start(self.shifterSettings, expand=True, fill=True, padding=0)
         self.shifterSettings.show()
 
@@ -128,7 +128,7 @@ class MainWindow(Gtk.Window):
         self.connect("delete-event", Gtk.main_quit)
         self.syncer = Syncer()
         self.settings = Settings()
-        self.settingsDialog = SettingsDialog(self, self.settings)
+        self.settingsDialog = SettingsDialog(self, self.settings, self.show_error_message)
 
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.add(self.vbox)
