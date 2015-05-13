@@ -32,7 +32,7 @@ rm -rf $RPM_BUILD_ROOT
 %{__python2} setup.py install --skip-build --root %{buildroot}
 
 %files
-%doc LICENSE README README.iPod
+%doc LICENSE README.md README.iPod.md
 %{_bindir}/*
 %{python2_sitelib}/*
 

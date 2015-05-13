@@ -1,1 +1,1 @@
-include LICENSE README README.iPod *.py  bin/qlsync bin/qlsync-playlist-from-device qlsync/*.py
+include LICENSE README.md README.iPod.md *.py  bin/qlsync bin/qlsync-create-album-playlists bin/qlsync-playlist-from-device qlsync/*.py

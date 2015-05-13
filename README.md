@@ -3,15 +3,20 @@ files on a portable device.  It uses Quodlibet to find playlists and
 music files, but is otherwise independent.
 
 Different transport protocols are supported to connect to your device:
-filesystem (i.e. mounted mass storage devive), FTP, and SFTP.
-MTP is not currently supported.
+filesystem (i.e. mounted mass storage devive), FTP, SFTP, and ADB
+(Android Debug Bridge).  MTP will never be supported; it is utterly
+hopeless.
 
-The program enables you to specify the parameters (transport
-protocol, music location, etc) for various devices.  These are saved
-in the file ~/.qlsync.  Note that any password you specify for ftp
-connection will be stored in that file (in pickle format, so easily
-readable).  For this reason, permissions on that file are set to 600.
-A future version of this program may encrypt that file.  ;-)
+For Android devices, ADB is highly recommended.  You will need to
+enable USB debugging (in developer options, which appear after you tap
+repeatedly on About -> Software Information -> More -> Build Number).
+
+The program enables you to specify the parameters (transport protocol,
+music location, etc) for various devices.  These are saved in the file
+~/.qlsync.  Note that any password you specify for e.g. ftp connection
+will be stored in that file (in pickle format, so easily readable).
+For this reason, permissions on that file are set to 600.  A future
+version of this program may encrypt that file.  ;-)
 
 The scan operation will scan both the Quodlibet library (for changed
 playlists, etc), and your device.  A list of all playlists known to
@@ -36,18 +41,21 @@ device only in the following cases:
 However, I strongly suggest you have backups for all music on your
 device.  There are no guarantees in case something goes wrong.
 
-Playlists are put in the subdirectory "Playlists" of the music folder
-on the device.  Currently only M3U format playlists are supported.
-Playlists are copied or deleted after all the music files.  This is
-because if the operation is cancelled, qlsync forgets about files it
-had already copied or deleted.  So if you restart the operation, it
-will start over, but end up with everything copied or deleted.
+Playlists are put in the subdirectory `qlsync` of the music folder on
+the device.  However, they will not appear as actual playlists on the
+device.  They are purely a mechanism for syncing music files.  (The
+reason is, any real playlist on the device seem to live on after the
+actual file is deleted, which is very annoying.)  Currently only M3U
+format playlists are supported.  Playlists are copied or deleted after
+all the music files.  This is because if the operation is cancelled,
+qlsync forgets about files it had already copied or deleted.  So if
+you restart the operation, it will start over, but end up with
+everything copied or deleted.
 
 So why does qlsync just look at playlists, rather than the actual
 files on the device?  It's to support the two-stage process for
-loading music onto iPods.  See README.iPod.
+[loading music onto iPods](README.iPod.md).
 
 Comments and requests for improvement welcome.
 
 Simon Guest <simon.guest@tesujimath.org>
-9 Oct 2012
