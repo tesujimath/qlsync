@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+#
+# Copyright 2015 Simon Guest
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation
+#
+# Rename files in given directories which contain troublesome
+# characters, and update .m3u playlists to match.
+# Troublesome characters are & and ;, which adb simply can't cope with
+# AFAICT.
+#
+# In playlist directories, every file is assumed to be a playlist.
+# In music dircetories, only .m3u files are assumed to be playlists
+
+import argparse
+
+import qlsync.renamer
+
+def main():
+    # parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--dry-run", action="store_true", default=False, help="don't actually do anything")
+    parser.add_argument("-m", "--music", action="store", nargs="+", help="music directory")
+    parser.add_argument("-p", "--playlist", action="store", nargs="+", help="playlistdirectory")
+    args = parser.parse_args()
+
+    #print("%s music: %s playlists: %s" % ("dry-run" if args.dry_run else "real", str(args.music), str(args.playlist)))
+    if args.music:
+        for d in args.music:
+            qlsync.renamer.rename_troublesome_files(d, dry_run = args.dry_run)
+    if args.playlist:
+        for d in args.playlist:
+            qlsync.renamer.rename_troublesome_files(d, all_playlists = True, dry_run = args.dry_run)
+
+if __name__ == '__main__':
+    main()

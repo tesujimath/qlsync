@@ -70,6 +70,21 @@ As an example, on my HTC One S, I use these settings:
 
 Note: the SD card root is required to trigger a rescan of uploaded music.
 
+Troublesome characters in filenames
+===================================
+
+Unfortunately `adb` can't deal with shell commands on files containing
+& or ;.  I found no way around this.  Therefore, there is the facility
+to rename all music files containing such characters, and edit all
+playlists, using the program `qlsync-rename-troublesome-files`.  When
+run with `-p`, it assumes *every* file it encounters is a playlist,
+and edits it accordingly.  (Quodlibet playlists may not end in
+`.m3u`.)  *WARNING*: Be careful to test its behaviour on a copy of
+your files before running it, since it edits playlist files and
+filenames in place.  Use `--dry-run` to see what it will do, and
+ensure you have backups of files you don't want to risk losing.  You
+have been warned!
+
 Comments and requests for improvement welcome.
 
 Simon Guest <simon.guest@tesujimath.org>
