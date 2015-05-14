@@ -22,6 +22,7 @@ import quodlibet.library
 
 from qlsync import *
 from qlsync.shifters import ShifterError
+from qlsync.renamer import mapped_name
 
 def ascify(s):
     """Convert Unicode string to ASCII, discarding out-of-bounds characters."""
@@ -192,14 +193,15 @@ class M3UFile(object):
     def close(self):
         self.f.close()
 
-class Playlist(object):
-    """A playlist."""
-    def __init__(self, relpath):
-        self.relpath = relpath
-        # Quodlibet replaces spaces in playlist names with %20, which is annoying to see as playlist names,
-        # so unquote them back to spaces
-        self.name = urlparse.unquote(relpath)
-        self.onDevice = False
+# TODO remove obsolete
+# class Playlist(object):
+#     """A playlist."""
+#     def __init__(self, relpath):
+#         self.relpath = relpath
+#         # Quodlibet replaces spaces in playlist names with %20, which is annoying to see as playlist names.
+#         # Unquote these back to spaces, but be careful to escape the really bad characters.
+#         self.name = mapped_name(urlparse.unquote(relpath))
+#         self.onDevice = False
 
 def tracknumber_as_int(song):
     tracknumber = song['tracknumber']
@@ -359,7 +361,7 @@ Files are not copied if they are already in the device playlist.
         self.playlists_on_device = [False] * len(self.playlists) # array of boolean
         i = 0
         for playlist in self.playlists:
-            playlist_name = urlparse.unquote(playlist) 
+            playlist_name = mapped_name(urlparse.unquote(playlist))
             self.playlist_names.append(playlist_name)
             self.playlist_index_by_name[playlist_name] = i
             i += 1
