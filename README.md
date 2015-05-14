@@ -1,4 +1,4 @@
-Intorduction
+Introduction
 ============
 
 qlsync is a small GUI program for maintaining playlists and music
