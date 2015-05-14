@@ -10,6 +10,27 @@ filesystem (i.e. mounted mass storage devive), FTP, SFTP, and ADB
 (Android Debug Bridge).  MTP will never be supported; it is utterly
 hopeless.
 
+Installation
+============
+
+Either use the standard Python distutils install:
+
+    $ git clone https://github.com/tesujimath/qlsync.git
+    $ cd qlsync
+    $ python setup.py install
+
+or (my preference) build yourself an RPM, example given for v0.4:
+
+    $ git clone https://github.com/tesujimath/qlsync.git
+    $ (cd qlsync; git checkout v0.4)
+    $ ln -s qlsync qlsync-0.4
+    $ tar cvzf ~/rpmbuild/SOURCES/qlsync-0.4.tgz -h --exclude-vcs --exclude '*~' --exclude '*.pyc' qlsync-0.4
+    $ cd qlsync
+    $ rpmbuild -ba qlsync.spec
+
+If you don't already know how to build an RPM, this probably isn't for
+you.  ;-)
+
 Basic Usage
 ===========
 
