@@ -11,6 +11,6 @@ setup(name='qlsync',
       author_email='simon.guest@tesujimath.org',
       url='https://github.com/tesujimath/qlsync',
       packages=['qlsync'],
-      scripts=['bin/qlsync', 'bin/qlsync-create-album-playlists', 'bin/qlsync-playlist-from-device', 'qlsync-rename-troublesome-files'],
+      scripts=['bin/qlsync', 'bin/qlsync-create-album-playlists', 'bin/qlsync-playlist-from-device', 'bin/qlsync-rename-troublesome-files'],
       license='GPLv2'
      )

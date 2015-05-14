@@ -5,10 +5,11 @@ Summary:        Sync Quodlibet library to device.
 
 License:        GPLv2
 URL:            https://github.com/tesujimath/qlsync
-Source0:        qlsync-%{version}.tgz
+Source0:        %{name}-%{version}.tgz
 
-BuildRequires:  python2-devel
+BuildRequires:  desktop-file-utils python2-devel 
 Requires:       pygobject2 pygtk2 quodlibet python-paramiko android-tools
+BuildArch:      noarch
 
 %description
 qlsync is a small GUI program for maintaining playlists and music
@@ -31,11 +32,15 @@ MTP is not currently supported.
 rm -rf $RPM_BUILD_ROOT
 %{__python2} setup.py install --skip-build --root %{buildroot}
 
+install -m 644 -D %{name}.desktop %{buildroot}/%{_datadir}/applications/%{name}.desktop
+desktop-file-validate %{buildroot}/%{_datadir}/applications/%{name}.desktop
+
 %files
 %doc LICENSE README.md README.iPod.md
 %{_bindir}/*
+%{_datadir}/applications/%{name}.desktop
 %{python2_sitelib}/*
 
 %changelog
-* Sat May  9 2015 Simon Guest <simon.guest@tesujimath.org> 0.4-1
+* Thu May 14 2015 Simon Guest <simon.guest@tesujimath.org> 0.4-1
 - first packaging
