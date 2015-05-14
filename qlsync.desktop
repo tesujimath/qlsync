@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=qlsync
+Comment=Syncs Quodlibet music to device
+Exec=qlsync
+Terminal=false
+Categories=Utility;
+StartupNotify=false
