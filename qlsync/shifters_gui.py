@@ -183,8 +183,14 @@ class AdbShifterWidget(Gtk.VBox):
         (rc, stdout_lines, stderr_lines) = adb(["devices"])
         # strip lines, and discard empties
         stdout_lines = [line.strip() for line in stdout_lines if line.strip() != ""]
-        if len(stdout_lines) == 2 and stdout_lines[0].lower().lstrip().startswith("list"):
-            tokens = stdout_lines[1].split()
+        # Sometimes get output like this, so skip past the starred lined
+        # * daemon not running. starting it now on port 5037 *
+        # * daemon started successfully *
+        # List of devices attached 
+        # SH27QY415601	device
+        data_lines = [line for line in stdout_lines if not line.startswith('*')]
+        if len(data_lines) == 2 and data_lines[0].lower().lstrip().startswith("list"):
+            tokens = data_lines[1].split()
             if len(tokens) == 2 and tokens[1].lower() == "device":
                 self.serialEntry.set_text(tokens[0])
                 return
