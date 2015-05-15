@@ -523,9 +523,9 @@ class Scribe(threading.Thread):
                 self.device.shifter.makedirs(dstDir)
                 self.device.shifter.uploadfile(src, dstFile)
                 self.deletions[dst] = False
-                progress = i_copy * 1.0 / (self.n_copies + 1) # all deletions count as 1
+                progress = i_copy * 1.0 / (self.n_copies + self.n_deletions)
                 self.progress_callback(progress)
-            elif self.deletions[dst]:
+            elif self.deletions.has_key(dst) and self.deletions[dst]:
                 i_delete += 1
                 print "removefile", i_delete, "of", self.n_deletions, ": ", dstFile
                 delDirs[dstDir] = True
@@ -535,6 +535,8 @@ class Scribe(threading.Thread):
                     # we don't care if this fails
                     print "ignoring error", e
                     pass
+                progress = (self.n_copies + i_delete) * 1.0 / (self.n_copies + self.n_deletions)
+                self.progress_callback(progress)
         for dstDir in delDirs.keys():
             if not cancelled:
                 cancelled = self.cancel_event.wait(0)
