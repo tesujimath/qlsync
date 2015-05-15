@@ -9,6 +9,8 @@ import os.path
 
 troublesome_map = { '&': 'and',
                     ';': '.',
+                    '"': "'",
+                    ':': '_',
                     }
 
 def mapped_name(x):
