@@ -461,7 +461,7 @@ Files are not copied if they are already in the device playlist.
 
 
 class Scribe(threading.Thread):
-    """Copies data onto the device in a background thread.  Playlists are copied/deleted after their music files."""
+    """Deletes then copies data onto the device in a background thread.  Playlists are copied/deleted after their music files."""
 
     def __init__(self, device, label_callback, progress_callback):
         super(Scribe, self).__init__()
@@ -469,7 +469,9 @@ class Scribe(threading.Thread):
         self.label_callback = label_callback
         self.progress_callback = progress_callback
         self.actions = []          # list of (src,dst), with src = None for deletions
-        self.deletions = {}             # indexed by dst, of deleteRequired
+        self.copies = []           # list of (src,dst)
+        self.deletions = []        # list of dst
+        self.deleteRequired = {}             # indexed by dst, of deleteRequired
         self.n_copies = 0
         self.n_deletions = 0
         self.cancel_event = threading.Event()
@@ -479,26 +481,31 @@ class Scribe(threading.Thread):
 
     def queue_copy(self, src, dst):
         self.n_copies += 1
-        self.actions.append((src,dst))
-        self.deletions[dst] = False
+        self.copies.append((src,dst))
+        self.deleteRequired[dst] = False
 
     def queue_copy_playlist(self, src, dst):
         self.n_copies += 1
-        self.actions.append((src,dst))
+        self.copies.append((src,dst))
 
     def queue_delete(self, dst):
-        if not self.deletions.has_key(dst):
-            self.deletions[dst] = True
+        if not self.deleteRequired.has_key(dst):
+            self.deleteRequired[dst] = True
         self.n_deletions += 1
-        self.actions.append((None,dst))
+        self.deletions.append(dst)
 
     def queue_delete_playlist(self, dst):
         self.n_deletions += 1
-        self.actions.append((None,dst))
+        self.deletions.append(dst)
+
+    def check_cancelled(self):
+        if not self.cancelled:
+            self.cancelled = self.cancel_event.wait(0)
+        return self.cancelled
 
     def run(self):
         """Copy all wanted files, and delete unwanted."""
-        cancelled = False
+        self.cancelled = False
         progress = 0.0
 
         # let GUI know what we're up to
@@ -510,22 +517,13 @@ class Scribe(threading.Thread):
         delDirs = {}
         i_copy = 0
         i_delete = 0
-        for src,dst in self.actions:
-            if not cancelled:
-                cancelled = self.cancel_event.wait(0)
-            if cancelled:
+        # deletions
+        for dst in self.deletions:
+            if self.check_cancelled():
                 break
             dstFile = os.path.join(dstRoot, dst)
             dstDir = os.path.dirname(dstFile)
-            if src is not None:
-                i_copy += 1
-                print "uploadfile", i_copy, "of", self.n_copies, ": ", dstFile
-                self.device.shifter.makedirs(dstDir)
-                self.device.shifter.uploadfile(src, dstFile)
-                self.deletions[dst] = False
-                progress = i_copy * 1.0 / (self.n_copies + self.n_deletions)
-                self.progress_callback(progress)
-            elif self.deletions.has_key(dst) and self.deletions[dst]:
+            if self.deleteRequired.has_key(dst) and self.deleteRequired[dst]:
                 i_delete += 1
                 print "removefile", i_delete, "of", self.n_deletions, ": ", dstFile
                 delDirs[dstDir] = True
@@ -535,15 +533,25 @@ class Scribe(threading.Thread):
                     # we don't care if this fails
                     print "ignoring error", e
                     pass
-                progress = (self.n_copies + i_delete) * 1.0 / (self.n_copies + self.n_deletions)
+                progress = i_delete * 1.0 / (self.n_copies + self.n_deletions)
                 self.progress_callback(progress)
         for dstDir in delDirs.keys():
-            if not cancelled:
-                cancelled = self.cancel_event.wait(0)
-            if cancelled:
+            if self.check_cancelled():
                 break
             self.device.shifter.removedir_if_empty(dstDir)
-        if not cancelled:
+        for src,dst in self.copies:
+            if self.check_cancelled():
+                break
+            dstFile = os.path.join(dstRoot, dst)
+            dstDir = os.path.dirname(dstFile)
+            if src is not None:
+                i_copy += 1
+                print "uploadfile", i_copy, "of", self.n_copies, ": ", dstFile
+                self.device.shifter.makedirs(dstDir)
+                self.device.shifter.uploadfile(src, dstFile)
+                progress = (self.n_deletions + i_copy) * 1.0 / (self.n_copies + self.n_deletions)
+                self.progress_callback(progress)
+        if not self.cancelled:
             progress = 1
         self.device.flush()
         self.progress_callback(progress, True) # complete
