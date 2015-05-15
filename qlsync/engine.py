@@ -461,75 +461,74 @@ Files are not copied if they are already in the device playlist.
 
 
 class Scribe(threading.Thread):
-    """Copies data onto the device in a background thread.  Playlists are copied/deleted last."""
+    """Copies data onto the device in a background thread.  Playlists are copied/deleted after their music files."""
 
     def __init__(self, device, label_callback, progress_callback):
         super(Scribe, self).__init__()
         self.device = device
         self.label_callback = label_callback
         self.progress_callback = progress_callback
-        self.copies = {}                # indexed by dst, of src
-        self.playlist_copies = {}       # copy over last
+        self.actions = []          # list of (src,dst), with src = None for deletions
         self.deletions = {}             # indexed by dst, of deleteRequired
-        self.playlist_deletions = {}    # delete last
+        self.n_copies = 0
+        self.n_deletions = 0
         self.cancel_event = threading.Event()
 
     def cancel(self):
         self.cancel_event.set()
 
     def queue_copy(self, src, dst):
-        self.copies[dst] = src
+        self.n_copies += 1
+        self.actions.append((src,dst))
+        self.deletions[dst] = False
 
     def queue_copy_playlist(self, src, dst):
-        self.playlist_copies[dst] = src
+        self.n_copies += 1
+        self.actions.append((src,dst))
 
     def queue_delete(self, dst):
-        self.deletions[dst] = True
+        if not self.deletions.has_key(dst):
+            self.deletions[dst] = True
+        self.n_deletions += 1
+        self.actions.append((None,dst))
 
     def queue_delete_playlist(self, dst):
-        self.playlist_deletions[dst] = True
+        self.n_deletions += 1
+        self.actions.append((None,dst))
 
     def run(self):
         """Copy all wanted files, and delete unwanted."""
         cancelled = False
         progress = 0.0
-        n_copies = len(self.copies) + len(self.playlist_copies)
-        n_deletions = len(self.deletions) + len(self.playlist_deletions)
 
         # let GUI know what we're up to
-        self.label_callback(str(n_copies) + " files to copy and " + str(n_deletions) + " to delete")
+        self.label_callback(str(self.n_copies) + " files to copy and " + str(self.n_deletions) + " to delete")
 
         # go for it
         self.device.shifter.open()
         dstRoot = self.device.musicdir
-        i = 0
-        for dst,src in self.copies.items() + self.playlist_copies.items():
+        delDirs = {}
+        i_copy = 0
+        i_delete = 0
+        for src,dst in self.actions:
             if not cancelled:
                 cancelled = self.cancel_event.wait(0)
             if cancelled:
                 break
             dstFile = os.path.join(dstRoot, dst)
             dstDir = os.path.dirname(dstFile)
-            self.device.shifter.makedirs(dstDir)
-            i += 1
-            print "uploadfile", i, "of", n_copies, ": ", dstFile
-            self.device.shifter.uploadfile(src, dstFile)
-            self.deletions[dst] = False
-            progress = i * 1.0 / (n_copies + 1) # all deletions count as 1
-            self.progress_callback(progress)
-        delDirs = {}
-        i = 0
-        for dst,deleteRequired in self.deletions.items() + self.playlist_deletions.items():
-            if not cancelled:
-                cancelled = self.cancel_event.wait(0)
-            if cancelled:
-                break
-            if deleteRequired:
-                dstFile = os.path.join(dstRoot, dst)
-                dstDir = os.path.dirname(dstFile)
+            if src is not None:
+                i_copy += 1
+                print "uploadfile", i_copy, "of", self.n_copies, ": ", dstFile
+                self.device.shifter.makedirs(dstDir)
+                self.device.shifter.uploadfile(src, dstFile)
+                self.deletions[dst] = False
+                progress = i_copy * 1.0 / (self.n_copies + 1) # all deletions count as 1
+                self.progress_callback(progress)
+            elif self.deletions[dst]:
+                i_delete += 1
+                print "removefile", i_delete, "of", self.n_deletions, ": ", dstFile
                 delDirs[dstDir] = True
-                i += 1
-                print "removefile", i, "of", n_deletions, ": ", dstFile
                 try:
                     self.device.shifter.removefile(dstFile)
                 except ShifterError as e:
