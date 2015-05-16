@@ -312,10 +312,14 @@ class Library(object):
     def relativise(self, abspath):
         """Return the path relative to a library root, or None."""
         relpath = None
+        matchlen = 0
         for ldir in self.musicdirs:
             if abspath.startswith(ldir):
-                relpath = abspath[len(ldir):].lstrip("/")
-                break
+                # want longest match, so we pick correctly between say
+                # /path/to/mp3 and /path/to/mp3-extra
+                if relpath == None or len(ldir) > matchlen:
+                    matchlen = len(ldir)
+                    relpath = abspath[matchlen:].lstrip("/")
         return relpath
 
     def playlist_files(self, playlist):
