@@ -13,23 +13,21 @@ hopeless.
 Installation
 ============
 
-Either use the standard Python distutils install:
+Either use the standard Python distutils install, from the toplevel
+directory in the unpacked tarball/zipfile:
 
-    $ git clone https://github.com/tesujimath/qlsync.git
-    $ cd qlsync
     $ python setup.py install
 
-or (my preference) build yourself an RPM, example given for v0.4:
+or (my preference) build yourself an RPM, example given for v0.4.2.
+First put the tarball in `~/rpmbuild/SOURCES`, then extract the spec
+file somewhere and build it:
 
-    $ git clone https://github.com/tesujimath/qlsync.git
-    $ (cd qlsync; git checkout v0.4)
-    $ ln -s qlsync qlsync-0.4
-    $ tar cvzf ~/rpmbuild/SOURCES/qlsync-0.4.tgz -h --exclude-vcs --exclude '*~' --exclude '*.pyc' qlsync-0.4
-    $ cd qlsync
+    $ tar xaf ~/rpmbuild/SOURCES/qlsync-0.4.2.tar.gz --strip-components=1 qlsync-0.4.2/qlsync.spec
     $ rpmbuild -ba qlsync.spec
 
-If you don't already know how to build an RPM, this probably isn't for
-you.  ;-)
+This requires that you are already setup to build RPMs, so if you
+don't already know how to build an RPM, this probably isn't for you.
+;-)
 
 Basic Usage
 ===========

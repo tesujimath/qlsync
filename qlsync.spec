@@ -1,11 +1,11 @@
 Name:           qlsync
-Version:        0.4.1
+Version:        0.4.2
 Release:        1%{?dist}
 Summary:        Sync Quodlibet library to device.
 
 License:        GPLv2
 URL:            https://github.com/tesujimath/qlsync
-Source0:        %{name}-%{version}.tgz
+Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  desktop-file-utils python2-devel 
 Requires:       pygobject2 pygtk2 quodlibet python-paramiko android-tools
@@ -42,6 +42,9 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/%{name}.desktop
 %{python2_sitelib}/*
 
 %changelog
+* Sat May 16 2015 Simon Guest <simon.guest@tesujimath.org> 0.4.2-1
+- show available device storage
+
 * Fri May 15 2015 Simon Guest <simon.guest@tesujimath.org> 0.4.1-1
 - minor updates/fixes
 
