@@ -11,6 +11,27 @@ import paramiko
 import shutil
 import subprocess
 
+# decimal not binary for disk drives and FLASH memory,
+# see http://en.wikipedia.org/wiki/Gigabyte
+KILO = 1000
+MEGA = KILO * KILO
+GIGA = MEGA * KILO
+
+def parse_as_gigabytes(s):
+    try:
+        x = float(s[:-1])
+        if s[-1].lower() == 'g':
+            gigabytes = x
+        elif s[-1].lower() == 'm':
+            gigabytes = x * 1.0 / KILO
+        elif s[-1].lower() == 'k':
+            gigabytes = x * 1.0 / MEGA
+        else:
+            gigabytes = None
+    except:
+        gigabytes = None
+    return gigabytes
+
 class ShifterError(BaseException):
     def __init__(self, message):
         self.message = message
@@ -76,6 +97,17 @@ class FilesystemShifter(object):
         except OSError as e:
              raise ShifterError(str(e))
         return files
+
+    def get_storage_space(self, dst):
+        """Disk space (avail, total) in GB."""
+        try:
+            s = os.statvfs(dst)
+            avail = s.f_bsize * s.f_bavail * 1.0 / GIGA
+            total = s.f_bsize * s.f_blocks * 1.0 / GIGA
+        except:
+            avail = None
+            total = None
+        return (avail, total)
 
     def flush(self):
         # ensure everything is on the disk
@@ -161,6 +193,10 @@ class FtpShifter(object):
             raise ShifterError(str(e))
         # may be relative or absolute, so cope with both
         return [ os.path.basename(x) for x in maybe_abs_files ]
+
+    def get_storage_space(self, dst):
+        """Disk space (avail, total) in GB."""
+        return (None, None)             # unknown
 
     def flush(self):
         pass
@@ -249,6 +285,10 @@ class SftpShifter(object):
         except (paramiko.SFTPError,IOError) as e:
              raise ShifterError(str(e))
         return files
+
+    def get_storage_space(self, dst):
+        """Disk space (avail, total) in GB."""
+        return (None, None)             # unknown
 
     def flush(self):
         pass
@@ -342,6 +382,18 @@ class AdbShifter(object):
             raise ShifterError(", ".join(stderr_lines))
         print("ls %s\n%s" % (dst, '\n'.join(stdout_lines)))
         return stdout_lines
+
+    def get_storage_space(self, dst):
+        """Disk space (avail, total) in GB."""
+        # Example Android df output:
+        # Filesystem             Size   Used   Free   Blksize
+        # /storage/sdcard0         9G     4G     5G   65536
+        (rc, stdout_lines, stderr_lines) = self.adb(["shell", "df", dst])
+        if rc == 0 and len(stdout_lines) >= 2:
+            fields = stdout_lines[1].split()
+            return (parse_as_gigabytes(fields[3]), parse_as_gigabytes(fields[1]))
+        else:
+            return (None, None)
 
     def flush(self):
         """Trigger a rescan of the sdcard."""

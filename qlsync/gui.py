@@ -8,8 +8,23 @@ from gi.repository import GObject, Gtk, Gdk
 
 from qlsync.engine import Device, Settings, Syncer
 from qlsync.shifters_gui import ShifterSelectorWidget
-from qlsync.shifters import ShifterError
+from qlsync.shifters import ShifterError, KILO
 
+def format_max_dp(x, dp = 1):
+    return ("%.*f" % (dp, x)).rstrip('0').rstrip('.')
+
+def format_gigabytes(g):
+    if g >= 1:
+        formatted = "%sG" % format_max_dp(g, 1)
+    else:
+        m = g * KILO
+        if m >= 1:
+            formatted = "%sM" % format_max_dp(m, 0)
+        else:
+            k = m * KILO
+            formatted = "%sK" % format_max_dp(k, 0)
+    return formatted
+            
 class SettingsDialog(object):
     def __init__(self, parent, settings, error_fn):
         self.settings = settings
@@ -148,17 +163,18 @@ class MainWindow(Gtk.Window):
         self.display_playlists()
         self.syncer.watch_playlists(self.display_playlists)
         self.syncer.watch_playlists_on_device(self.display_playlists_status)
+        self.syncer.watch_device_storage(self.update_storage_space_callback)
 
-        # button box
-        self.buttonBox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.vbox.pack_start(self.buttonBox, expand=False, fill=False, padding=0)
+        # buttons and status
+        self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.vbox.pack_start(self.hbox, expand=False, fill=False, padding=0)
 
         # Device selection and settings button
         self.settingsButton = Gtk.Button()
         self.settingsButton.connect_object("event", self.settings_callback, None)
         self.update_settings_button()
         self.settings.watch_current_device(self.update_settings_button)
-        self.buttonBox.add(self.settingsButton)
+        self.hbox.add(self.settingsButton)
 
         # Scan button
         self.scanButton = Gtk.Button("Scan")
@@ -167,12 +183,20 @@ class MainWindow(Gtk.Window):
         # grab_default after pack_start, to avoid:
         # GtkWarning: gtkwidget.c:5683: widget not within a GtkWindow
         self.scanButton.grab_default()
-        self.buttonBox.add(self.scanButton)
+        self.hbox.add(self.scanButton)
 
         # Sync button
         self.syncButton = Gtk.Button("Sync")
         self.syncButton.connect_object("clicked", self.sync_callback, self)
-        self.buttonBox.add(self.syncButton)
+        self.hbox.add(self.syncButton)
+
+        # Storage space bar
+        self.storage_space_bar = Gtk.ProgressBar()
+        self.hbox.add(self.storage_space_bar)
+
+        # Storage space label
+        self.storage_space_label = Gtk.Label("")
+        self.hbox.add(self.storage_space_label)
 
         # Device menu
         self.create_device_menu()
@@ -253,6 +277,7 @@ class MainWindow(Gtk.Window):
         else:
             deviceIndex = data
         self.settingsDialog.show(deviceIndex)
+        self.clear_storage_space()
 
     def scan_callback(self, widget):
         self.syncer.scan_library()
@@ -321,11 +346,28 @@ class MainWindow(Gtk.Window):
             self.syncer.sync_device_completed(fraction, device)
             self.close_progress_window()
 
+    def update_storage_space_callback(self, usage):
+        GObject.idle_add(self.update_storage_space, usage)
+
+    def update_storage_space(self, usage):
+        """Args are floating gigabtyes."""
+        avail, total = usage
+        if avail is None or total is None:
+            # unknown
+            self.storage_space_label.set_text("device storage unknown")
+            self.storage_space_bar.set_fraction(0)
+        else:
+            self.storage_space_label.set_text("%s available of %s" % (format_gigabytes(avail), format_gigabytes(total)))
+            self.storage_space_bar.set_fraction((total - avail) * 1.0 / total)
+
+    def clear_storage_space(self):
+        self.update_storage_space((None, None))
+
     def close_progress_window(self):
-            self.progress_window.destroy()
-            self.progress_window = None
-            self.progress_bar = None
-            self.progress_label = None
+        self.progress_window.destroy()
+        self.progress_window = None
+        self.progress_bar = None
+        self.progress_label = None
 
     def create_device_menu(self):
         self.deviceMenu = Gtk.Menu()

@@ -64,10 +64,11 @@ class Device(object):
         """Given a musicfile in a device playlist, return the actual pathname.  The opposite of musicfile_playlist_path."""
         return os.path.normpath(os.path.join("qlsync", musicfile_in_playlist))
 
-    def scan_playlists(self):
-        """Get all the playlists from the device, by looking in the playlist dir for qls files."""
+    def scan(self):
+        """Get device storage space and all the playlists from the device, by looking in the playlist dir for qls files."""
         self.clear_non_persistent()
         self.shifter.open()
+        usage = self.shifter.get_storage_space(self.musicdir)
         if self.shifter.path_exists(self.playlist_dir()):
             for f in self.shifter.ls(self.playlist_dir()):
                 m = re.match(r'^(.*)\.qls', f)
@@ -78,6 +79,7 @@ class Device(object):
                     self.playlist_files[playlist_name] = set(playlist_contents)
                     self.all_songs.update(self.playlist_files[playlist_name])
         self.shifter.close()
+        return usage
 
     # TODO remove obsolete:
     # def playlist_name(self, playlistfile):
@@ -350,6 +352,7 @@ Files are not copied if they are already in the device playlist.
         self.tmpdir = tempfile.mkdtemp()
         self.scribe = None
         self.scan_library()
+        self.device_storage = (None, None) # unknown
 
     def scan_library(self):
         """Scan for quodlibet playlists."""
@@ -369,12 +372,16 @@ Files are not copied if they are already in the device playlist.
 
     def scan_device(self, device):
         """Scan what is on the device."""
-        device.scan_playlists()
+        usage = device.scan()
         for playlist_name in device.playlist_files.keys():
             if self.playlist_index_by_name.has_key(playlist_name):
                 i = self.playlist_index_by_name[playlist_name]
                 self.playlists_on_device[i] = True
         self.notify_playlists_on_device_changed()
+        self.notify_device_storage_changed(usage)
+
+    def get_device_storage(self):
+        return self.device_storage
 
     def sync_device(self, device, playlists_wanted, label_callback, progress_callback):
         """Sync playlists, adding and deleting so that only playlists_wanted are present."""
@@ -420,6 +427,13 @@ Files are not copied if they are already in the device playlist.
     def notify_playlists_on_device_changed(self):
         if hasattr(self, 'playlists_on_device_callback'):
             self.playlists_on_device_callback()
+
+    def watch_device_storage(self, callback):
+        self.device_storage_callback = callback
+
+    def notify_device_storage_changed(self, usage):
+        if hasattr(self, 'device_storage_callback'):
+            self.device_storage_callback(usage)
 
     def create_and_queue_playlist(self, playlist, playlist_name, device, scribe):
         """Copy over any songs which have changed."""
