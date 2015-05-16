@@ -23,7 +23,9 @@ tarball, for example (depending on version and download directory):
 
     $ rpmbuild -ta ~/Downloads/qlsync-0.4.2.tar.gz
 
-This requires that you are already setup to build RPMs.
+This requires that you are already setup to build RPMs.  The RPM
+package is tested on recent Fedora, which at the time of writing means
+Fedora 21.
 
 Basic Usage
 ===========
