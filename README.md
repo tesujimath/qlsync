@@ -18,16 +18,12 @@ directory in the unpacked tarball/zipfile:
 
     $ python setup.py install
 
-or (my preference) build yourself an RPM, example given for v0.4.2.
-First put the tarball in `~/rpmbuild/SOURCES`, then extract the spec
-file somewhere and build it:
+or (my preference) build yourself an RPM directly from the downloaded
+tarball, for example (depending on version and download directory):
 
-    $ tar xaf ~/rpmbuild/SOURCES/qlsync-0.4.2.tar.gz --strip-components=1 qlsync-0.4.2/qlsync.spec
-    $ rpmbuild -ba qlsync.spec
+    $ rpmbuild -ta ~/Downloads/qlsync-0.4.2.tar.gz
 
-This requires that you are already setup to build RPMs, so if you
-don't already know how to build an RPM, this probably isn't for you.
-;-)
+This requires that you are already setup to build RPMs.
 
 Basic Usage
 ===========
