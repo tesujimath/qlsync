@@ -22,7 +22,6 @@ import quodlibet.library
 
 from qlsync import *
 from qlsync.shifters import ShifterError
-from qlsync.renamer import mapped_name
 
 def ascify(s):
     """Convert Unicode string to ASCII, discarding out-of-bounds characters."""
@@ -195,16 +194,6 @@ class M3UFile(object):
     def close(self):
         self.f.close()
 
-# TODO remove obsolete
-# class Playlist(object):
-#     """A playlist."""
-#     def __init__(self, relpath):
-#         self.relpath = relpath
-#         # Quodlibet replaces spaces in playlist names with %20, which is annoying to see as playlist names.
-#         # Unquote these back to spaces, but be careful to escape the really bad characters.
-#         self.name = mapped_name(urlparse.unquote(relpath))
-#         self.onDevice = False
-
 def tracknumber_as_int(song):
     tracknumber = song['tracknumber']
     slash_pos = tracknumber.find('/')
@@ -360,17 +349,17 @@ Files are not copied if they are already in the device playlist.
 
     def scan_library(self):
         """Scan for quodlibet playlists."""
-        # Quodlibet replaces spaces in playlist names with %20, which is annoying to see on my mp3 player,
-        # so I unquote them back to spaces
+        # Keep Quodlibet's encoded playlist names, as trying to store
+        # decoded names is troublesome.
         self.playlists = self.library.playlists()
         self.playlist_names = []
         self.playlist_index_by_name = {}
         self.playlists_on_device = [False] * len(self.playlists) # array of boolean
         i = 0
         for playlist in self.playlists:
-            playlist_name = mapped_name(urlparse.unquote(playlist))
+            playlist_name = urlparse.unquote(playlist)
             self.playlist_names.append(playlist_name)
-            self.playlist_index_by_name[playlist_name] = i
+            self.playlist_index_by_name[playlist] = i
             i += 1
         self.notify_playlists_changed()
 
@@ -395,12 +384,12 @@ Files are not copied if they are already in the device playlist.
             if playlists_wanted[i]:
                 # wanted playlist, ensure it and all songs are on device
                 self.create_and_queue_playlist(self.playlists[i],
-                                               self.playlist_names[i],
+                                               self.playlists[i],
                                                device,
                                                self.scribe)
-            elif self.playlist_names[i] in device.playlist_files.keys():
+            elif self.playlists[i] in device.playlist_files.keys():
                 # unwanted playlist on device, so delete
-                self.delete_playlist(self.playlist_names[i], device, self.scribe)
+                self.delete_playlist(self.playlists[i], device, self.scribe)
         self.scribe.start()
 
     def cancel_sync(self):
@@ -498,21 +487,27 @@ class Scribe(threading.Thread):
         self.cancel_event.set()
 
     def queue_copy(self, src, dst):
+        print("queue_copy(%s, %s)" % (src, dst))
         self.n_copies += 1
         self.copies.append((src,dst))
         self.deleteRequired[dst] = False
 
     def queue_copy_playlist(self, src, dst):
+        print("queue_copy_playlist(%s, %s)" % (src, dst))
         self.n_copies += 1
         self.copies.append((src,dst))
 
     def queue_delete(self, dst):
+        print("queue_delete(%s)" % dst)
         if not self.deleteRequired.has_key(dst):
             self.deleteRequired[dst] = True
         self.n_deletions += 1
         self.deletions.append(dst)
 
     def queue_delete_playlist(self, dst):
+        print("queue_delete_playlist(%s)" % dst)
+        if not self.deleteRequired.has_key(dst):
+            self.deleteRequired[dst] = True
         self.n_deletions += 1
         self.deletions.append(dst)
 
