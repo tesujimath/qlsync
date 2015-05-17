@@ -1,5 +1,5 @@
 Name:           qlsync
-Version:        0.4.2
+Version:        0.4.3
 Release:        1%{?dist}
 Summary:        Sync Quodlibet library to device.
 
@@ -42,6 +42,10 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/%{name}.desktop
 %{python2_sitelib}/*
 
 %changelog
+* Sun May 17 2015 Simon Guest <simon.guest@tesujimath.org> 0.4.3-1
+- bugfixes
+- use encoded names for qls files
+
 * Sat May 16 2015 Simon Guest <simon.guest@tesujimath.org> 0.4.2-1
 - show available device storage
 
