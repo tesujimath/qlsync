@@ -202,13 +202,42 @@ def tracknumber_as_int(song):
     else:
         return int(tracknumber)
 
-class RefinedAlbum:
+def discnumber_as_int(song):
+    try:
+        discnumber = int(song['discnumber'])
+    except (KeyError, ValueError):
+        discnumber = 1
+    return discnumber
+
+class Song(object):
+    def __init__(self, dict):
+        self.dict = dict
+
+    def description(self):
+        if self.dict.has_key("tracknumber"):
+            tracknumber = "%s - " % self.dict.tracknumber
+        else:
+            tracknumber = ""
+        if self.dict.has_key("title"):
+            title = self.dict.title
+        else:
+            title = "<unknown>"
+        return "%s%s" % (tracknumber, title)
+
+class Album(object):
     def __init__(self, album_name, artist, tracks):
         self.artist = artist
         self.name = album_name
         self.songs = []
-        for track in range(1, 1 + len(tracks.keys())):
+        self.complete = has_all_tracks(tracks)
+        for track in sorted(tracks.keys()):
             self.songs.append(tracks[track])
+
+    def description(self):
+        return "%s - %s (%d %s%s)" % (self.artist,
+                                     self.name, len(self.songs),
+                                     "songs" if len(self.songs) > 1 else "song",
+                                     "" if self.complete else ", incomplete")
 
 def has_all_tracks(dict, min = 2):
     """Need at least min tracks."""
@@ -228,6 +257,9 @@ def refine_album(composite_album):
             artist = song['artist']
             album_name = song['album']
             track = tracknumber_as_int(song)
+            # TODO remove
+            if album_name == "Reel Chill - The Cinematic Chillout Album" and track == 1:
+                print("%s - %d songs" % (album_name, len(composite_album.songs)))
         except KeyError:
             bad_album = True
         if not bad_album:
@@ -244,7 +276,8 @@ def refine_album(composite_album):
         for artist in component_albums[album_name].keys():
             # if we've got consecutive tracks, then make it a standalone album
             if has_all_tracks(component_albums[album_name][artist]):
-                refined_albums.append(RefinedAlbum(album_name, artist, component_albums[album_name].pop(artist)))
+                refined_albums.append(Album(album_name, artist, component_albums[album_name].pop(artist)))
+                print("1 %s" % refined_albums[-1].description())
             else:
                 # collect into various artists
                 for track in component_albums[album_name][artist].keys():
@@ -253,7 +286,8 @@ def refine_album(composite_album):
         if len(various_artists) == 0:
             pass
         elif has_all_tracks(various_artists):
-            refined_albums.append(RefinedAlbum(album_name, "Various", various_artists))
+            refined_albums.append(Album(album_name, "Various", various_artists))
+            print("2 %s" % refined_albums[-1].description())
         else:
             # find an artist for the incomplete album
             artist = None
@@ -266,6 +300,8 @@ def refine_album(composite_album):
                     break
             if artist is None:
                 artist = "Unknown"
+            refined_albums.append(Album(album_name, artist, various_artists))
+            print("3 %s" % refined_albums[-1].description())
             sys.stderr.write("Incomplete album: %s - %s - %s\n" % (artist, album_name, [track for track in sorted(various_artists.keys())]))
     return refined_albums
 
