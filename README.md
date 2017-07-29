@@ -1,3 +1,7 @@
+*This project is abandoned.  While MTP on Linux is still hopeless for
+bulk transfers, I have resorted to copy and paste of music files in an
+Android file manager.*
+
 Introduction
 ============
 
